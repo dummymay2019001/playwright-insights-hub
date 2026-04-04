@@ -1,23 +1,26 @@
 import { useMemo } from "react";
 import { useRuns } from "@/store/RunsContext";
 import { useNavigate } from "react-router-dom";
-import { passRate, formatDate } from "@/utils/format";
+import { passRate } from "@/utils/format";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, AreaChart, Area,
 } from "recharts";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/StatusBadge";
 
 const chartTooltipStyle = {
-  backgroundColor: "hsl(222, 44%, 9%)",
-  border: "1px solid hsl(220, 30%, 16%)",
+  backgroundColor: "hsl(0, 0%, 100%)",
+  border: "1px solid hsl(220, 16%, 90%)",
   borderRadius: "6px",
   fontFamily: "var(--font-mono)",
   fontSize: "12px",
-  color: "hsl(210, 40%, 93%)",
+  color: "hsl(222, 47%, 11%)",
+  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
 };
+
+const gridStroke = "hsl(220, 16%, 92%)";
+const tickStyle = { fontSize: 10, fontFamily: "var(--font-mono)", fill: "hsl(220, 10%, 46%)" };
 
 const TrendsPage = () => {
   const { runs, loading } = useRuns();
@@ -35,24 +38,22 @@ const TrendsPage = () => {
         passRate: passRate(r.manifest),
         failures: r.manifest.failed,
         duration: r.manifest.duration,
-        runId: r.manifest.runId,
       })),
     [sorted]
   );
 
-  // Run comparison: latest vs previous
   const comparison = useMemo(() => {
     if (sorted.length < 2) return null;
     const curr = sorted[sorted.length - 1];
     const prev = sorted[sorted.length - 2];
-
     const currNames = new Set(curr.results.filter((t) => t.status === "failed").map((t) => t.name));
     const prevNames = new Set(prev.results.filter((t) => t.status === "failed").map((t) => t.name));
-
-    const newFailures = [...currNames].filter((n) => !prevNames.has(n));
-    const resolved = [...prevNames].filter((n) => !currNames.has(n));
-
-    return { curr: curr.manifest, prev: prev.manifest, newFailures, resolved };
+    return {
+      curr: curr.manifest,
+      prev: prev.manifest,
+      newFailures: [...currNames].filter((n) => !prevNames.has(n)),
+      resolved: [...prevNames].filter((n) => !currNames.has(n)),
+    };
   }, [sorted]);
 
   if (loading) {
@@ -65,8 +66,8 @@ const TrendsPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container py-4 flex items-center gap-4">
+      <header className="border-b bg-card sticky top-0 z-10">
+        <div className="container py-3 flex items-center gap-4">
           <Button variant="ghost" size="sm" className="font-mono text-xs" onClick={() => navigate("/")}>
             ← Dashboard
           </Button>
@@ -77,41 +78,39 @@ const TrendsPage = () => {
         </div>
       </header>
 
-      <main className="container py-6 space-y-8">
-        {/* Pass Rate Over Time */}
+      <main className="container py-6 space-y-6">
         <section className="rounded-lg border bg-card p-4">
           <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4">Pass Rate Over Time</h2>
-          <div className="h-56">
+          <div className="h-52 sm:h-56">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="passGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(142, 70%, 45%)" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="hsl(142, 70%, 45%)" stopOpacity={0} />
+                    <stop offset="0%" stopColor="hsl(152, 60%, 40%)" stopOpacity={0.2} />
+                    <stop offset="100%" stopColor="hsl(152, 60%, 40%)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 30%, 16%)" />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fontFamily: "var(--font-mono)", fill: "hsl(215, 20%, 55%)" }} />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 11, fontFamily: "var(--font-mono)", fill: "hsl(215, 20%, 55%)" }} tickFormatter={(v) => `${v}%`} />
+                <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+                <XAxis dataKey="date" tick={tickStyle} />
+                <YAxis domain={[0, 100]} tick={tickStyle} tickFormatter={(v) => `${v}%`} />
                 <Tooltip contentStyle={chartTooltipStyle} formatter={(v: number) => [`${v}%`, "Pass Rate"]} />
-                <Area type="monotone" dataKey="passRate" stroke="hsl(142, 70%, 45%)" strokeWidth={2} fill="url(#passGrad)" />
+                <Area type="monotone" dataKey="passRate" stroke="hsl(152, 60%, 40%)" strokeWidth={2} fill="url(#passGrad)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </section>
 
-        {/* Failure Count + Duration side by side on larger screens */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <section className="rounded-lg border bg-card p-4">
             <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4">Failure Count</h2>
-            <div className="h-48">
+            <div className="h-44">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 30%, 16%)" />
-                  <XAxis dataKey="date" tick={{ fontSize: 10, fontFamily: "var(--font-mono)", fill: "hsl(215, 20%, 55%)" }} />
-                  <YAxis tick={{ fontSize: 10, fontFamily: "var(--font-mono)", fill: "hsl(215, 20%, 55%)" }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+                  <XAxis dataKey="date" tick={tickStyle} />
+                  <YAxis tick={tickStyle} />
                   <Tooltip contentStyle={chartTooltipStyle} />
-                  <Bar dataKey="failures" fill="hsl(0, 72%, 51%)" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="failures" fill="hsl(0, 72%, 51%)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -119,12 +118,12 @@ const TrendsPage = () => {
 
           <section className="rounded-lg border bg-card p-4">
             <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4">Duration Trend</h2>
-            <div className="h-48">
+            <div className="h-44">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 30%, 16%)" />
-                  <XAxis dataKey="date" tick={{ fontSize: 10, fontFamily: "var(--font-mono)", fill: "hsl(215, 20%, 55%)" }} />
-                  <YAxis tick={{ fontSize: 10, fontFamily: "var(--font-mono)", fill: "hsl(215, 20%, 55%)" }} tickFormatter={(v) => `${v}s`} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+                  <XAxis dataKey="date" tick={tickStyle} />
+                  <YAxis tick={tickStyle} tickFormatter={(v) => `${v}s`} />
                   <Tooltip contentStyle={chartTooltipStyle} formatter={(v: number) => [`${v}s`, "Duration"]} />
                   <Line type="monotone" dataKey="duration" stroke="hsl(38, 92%, 50%)" strokeWidth={2} dot={{ r: 3, fill: "hsl(38, 92%, 50%)" }} />
                 </LineChart>
@@ -133,21 +132,18 @@ const TrendsPage = () => {
           </section>
         </div>
 
-        {/* Run Comparison */}
         {comparison && (
           <section className="rounded-lg border bg-card p-4 space-y-4">
-            <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Run Comparison: Latest vs Previous
-            </h2>
+            <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Run Comparison: Latest vs Previous</h2>
             <div className="grid grid-cols-2 gap-3 text-center">
-              <div className="rounded-md border bg-muted/20 p-3">
+              <div className="rounded-md border bg-muted/40 p-3">
                 <p className="text-xs text-muted-foreground mb-1">Previous</p>
-                <p className="font-mono text-sm text-foreground">{passRate(comparison.prev)}% pass</p>
+                <p className="font-mono text-sm font-semibold text-foreground">{passRate(comparison.prev)}% pass</p>
                 <p className="font-mono text-xs text-muted-foreground">{comparison.prev.failed} failures</p>
               </div>
-              <div className="rounded-md border bg-muted/20 p-3">
+              <div className="rounded-md border bg-muted/40 p-3">
                 <p className="text-xs text-muted-foreground mb-1">Latest</p>
-                <p className="font-mono text-sm text-foreground">{passRate(comparison.curr)}% pass</p>
+                <p className="font-mono text-sm font-semibold text-foreground">{passRate(comparison.curr)}% pass</p>
                 <p className="font-mono text-xs text-muted-foreground">{comparison.curr.failed} failures</p>
               </div>
             </div>
