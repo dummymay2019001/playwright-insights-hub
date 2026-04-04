@@ -6,6 +6,7 @@ import { StatCard } from "@/components/StatCard";
 import { StatusPieChart } from "@/components/StatusPieChart";
 import { TestRow } from "@/components/TestRow";
 import { TagSummary } from "@/components/TagSummary";
+import { SuiteBreakdown } from "@/components/SuiteBreakdown";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TestStatus } from "@/models/types";
@@ -110,6 +111,9 @@ const RunDetailPage = () => {
           <TagSummary tags={tagSummary} selectedTag={selectedTag} onSelectTag={setSelectedTag} />
         </section>
       )}
+
+      {/* Suite Breakdown */}
+      <SuiteBreakdown results={run.results} runId={m.runId} />
 
       {/* Filters + Test List */}
       <section>

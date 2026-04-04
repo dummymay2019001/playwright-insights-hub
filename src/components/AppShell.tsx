@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { path: "/", label: "Dashboard", icon: "📋" },
   { path: "/trends", label: "Trends", icon: "📈" },
   { path: "/insights", label: "Insights", icon: "💡" },
+  { path: "/help", label: "Guide", icon: "📖" },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {

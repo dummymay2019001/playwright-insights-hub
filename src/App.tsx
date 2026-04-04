@@ -11,6 +11,7 @@ import Trends from "./pages/Trends.tsx";
 import Insights from "./pages/Insights.tsx";
 import TestDetail from "./pages/TestDetail.tsx";
 import ExportPage from "./pages/ExportPage.tsx";
+import HelpPage from "./pages/Help.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
               <Route path="/insights" element={<Insights />} />
               <Route path="/test/:testName" element={<TestDetail />} />
               <Route path="/export/:runId" element={<ExportPage />} />
+              <Route path="/help" element={<HelpPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AppShell>
