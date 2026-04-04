@@ -4,12 +4,18 @@ import { useRuns } from "@/store/RunsContext";
 import { RunRow } from "@/components/RunRow";
 import { StatCard } from "@/components/StatCard";
 import { HealthGauge } from "@/components/HealthGauge";
+import { FileDropZone } from "@/components/FileDropZone";
 import { passRate } from "@/utils/format";
 import { Button } from "@/components/ui/button";
+import { IngestionResult } from "@/services/fileIngestion";
 
 const DashboardPage = () => {
-  const { runs, loading } = useRuns();
+  const { runs, loading, dataMode, importRuns, switchToDemo } = useRuns();
   const navigate = useNavigate();
+
+  const handleImport = (result: IngestionResult) => {
+    importRuns(result.runs, true);
+  };
 
   const metrics = useMemo(() => {
     if (runs.length === 0) return null;
@@ -58,12 +64,19 @@ const DashboardPage = () => {
 
   if (!metrics) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4">
+      <div className="flex flex-col items-center justify-center py-12 gap-6 max-w-xl mx-auto">
         <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
           <span className="text-3xl">📋</span>
         </div>
-        <p className="font-mono text-muted-foreground">No test runs loaded</p>
-        <Button variant="outline" onClick={() => navigate("/help")}>📖 Setup Guide</Button>
+        <div className="text-center">
+          <p className="font-mono text-sm font-medium text-foreground">No test runs loaded</p>
+          <p className="text-xs text-muted-foreground mt-1">Import your Playwright JSON results or explore with demo data</p>
+        </div>
+        <FileDropZone onImport={handleImport} />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={switchToDemo}>🎭 Load Demo Data</Button>
+          <Button variant="outline" size="sm" onClick={() => navigate("/help")}>📖 Setup Guide</Button>
+        </div>
       </div>
     );
   }
@@ -134,17 +147,37 @@ const DashboardPage = () => {
         />
       </div>
 
-      {/* Quick actions */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Button variant="outline" size="sm" className="font-mono text-xs" onClick={() => navigate("/trends")}>
-          📈 View Trends
-        </Button>
-        <Button variant="outline" size="sm" className="font-mono text-xs" onClick={() => navigate("/insights")}>
-          💡 Insights
-        </Button>
-        <Button variant="outline" size="sm" className="font-mono text-xs" onClick={() => navigate(`/export/${encodeURIComponent(metrics.latest.runId)}`)}>
-          📄 Export Latest
-        </Button>
+      {/* Data mode & quick actions */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="outline" size="sm" className="font-mono text-xs" onClick={() => navigate("/trends")}>
+            📈 View Trends
+          </Button>
+          <Button variant="outline" size="sm" className="font-mono text-xs" onClick={() => navigate("/insights")}>
+            💡 Insights
+          </Button>
+          <Button variant="outline" size="sm" className="font-mono text-xs" onClick={() => navigate(`/export/${encodeURIComponent(metrics.latest.runId)}`)}>
+            📄 Export Latest
+          </Button>
+          <FileDropZone onImport={handleImport} compact />
+        </div>
+        <div className="flex items-center gap-2">
+          {dataMode === "demo" && (
+            <span className="font-mono text-[10px] text-muted-foreground px-2 py-0.5 rounded-full bg-warning/10 border border-warning/20">
+              Demo Data
+            </span>
+          )}
+          {dataMode === "imported" && (
+            <>
+              <span className="font-mono text-[10px] text-muted-foreground px-2 py-0.5 rounded-full bg-success/10 border border-success/20">
+                Imported Data
+              </span>
+              <Button variant="ghost" size="sm" className="font-mono text-[10px] h-6 px-2 text-muted-foreground" onClick={switchToDemo}>
+                Reset Demo
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Run list */}

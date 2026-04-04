@@ -299,21 +299,23 @@ export default defineConfig({
         </div>
       </Section>
 
-      {/* JSON Structure */}
-      <Section title="Result File Structure" icon="📁">
+      {/* Folder Structure */}
+      <Section title="Folder Structure & File Formats" icon="📁">
         <p className="text-sm text-muted-foreground">
-          The dashboard reads test results from structured JSON. Here's the expected format:
+          The dashboard supports multiple ways to import your test results. Drop files or folders directly on the dashboard or use the import button.
         </p>
-        <CodeBlock title="results.json">{`{
+
+        <div className="space-y-3">
+          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Supported Structures</h3>
+
+          <CodeBlock title="Option 1: Single run file">{`// results.json
+{
   "manifest": {
     "runId": "run-2026-04-01T10-00-00",
     "timestamp": "2026-04-01T10:00:00.000Z",
     "branch": "main",
     "environment": "staging",
-    "total": 34,
-    "passed": 30,
-    "failed": 3,
-    "skipped": 1,
+    "total": 34, "passed": 30, "failed": 3, "skipped": 1,
     "duration": 120
   },
   "results": [
@@ -332,8 +334,138 @@ export default defineConfig({
   ]
 }`}</CodeBlock>
 
+          <CodeBlock title="Option 2: Multi-run array">{`// all-runs.json
+[
+  { "manifest": { ... }, "results": [ ... ] },
+  { "manifest": { ... }, "results": [ ... ] }
+]`}</CodeBlock>
+
+          <CodeBlock title="Option 3: Folder with manifest + suite files">{`test-results/
+├── manifest.json          ← run metadata (optional, auto-generated if missing)
+├── auth.json              ← array of TestResult[] for auth suite
+├── checkout.json          ← array of TestResult[] for checkout suite
+└── api.json               ← array of TestResult[] for api suite`}</CodeBlock>
+
+          <CodeBlock title="Option 4: Flat results array (manifest auto-generated)">{`// just-results.json
+[
+  { "id": "t-1", "name": "auth > login", "suite": "auth",
+    "file": "tests/auth.spec.ts", "status": "passed",
+    "duration": 1200, "retries": 0, "tags": ["smoke"] },
+  { "id": "t-2", "name": "checkout > add to cart", ... }
+]`}</CodeBlock>
+
+          <CodeBlock title="Option 5: Nested folders (one folder per run)">{`test-results/
+├── run-2026-04-01/
+│   ├── manifest.json
+│   ├── auth.json
+│   └── checkout.json
+├── run-2026-04-02/
+│   └── results.json        ← full run file
+└── run-2026-04-03.json     ← single file at root`}</CodeBlock>
+        </div>
+
+        <div className="flex items-start gap-2 p-3 rounded-md bg-primary/5 border border-primary/20">
+          <span className="text-sm">💡</span>
+          <p className="text-xs text-muted-foreground">
+            <strong className="text-foreground">Auto-detection:</strong> The importer automatically detects the file format. 
+            You can mix and match — drop a folder of run directories or individual JSON files. 
+            Duplicate runs (same <code className="font-mono bg-muted px-1 rounded">runId</code>) are automatically deduplicated.
+          </p>
+        </div>
+
+        <div className="flex items-start gap-2 p-3 rounded-md bg-success/10 border border-success/30">
+          <span className="text-sm">🔄</span>
+          <p className="text-xs text-muted-foreground">
+            <strong className="text-foreground">Persistence:</strong> Imported runs are saved to your browser's local storage. 
+            They persist across page reloads. Use the "Reset Demo" button on the dashboard to return to sample data.
+          </p>
+        </div>
+      </Section>
+
+      {/* Playwright Reporter Integration */}
+      <Section title="Playwright Reporter Integration" icon="🔌">
+        <p className="text-sm text-muted-foreground">
+          Create a custom Playwright reporter that outputs JSON in the format the dashboard expects:
+        </p>
+        <CodeBlock title="reporters/dashboard-reporter.ts">{`import { Reporter, TestCase, TestResult as PWResult, FullResult } from '@playwright/test/reporter';
+import * as fs from 'fs';
+import * as path from 'path';
+
+class DashboardReporter implements Reporter {
+  private results: any[] = [];
+  private startTime = Date.now();
+  
+  onTestEnd(test: TestCase, result: PWResult) {
+    const suite = test.parent.title || 'default';
+    const apiAttachment = result.attachments.find(a => a.name === 'api-payload');
+    
+    this.results.push({
+      id: test.id,
+      name: \`\${suite} > \${test.title}\`,
+      suite,
+      file: path.relative(process.cwd(), test.location.file),
+      status: result.status === 'timedOut' ? 'failed' : result.status,
+      duration: result.duration,
+      retries: result.retry,
+      tags: test.tags.map(t => t.replace('@', '')),
+      error: result.error?.message ? \`\${result.error.message}\\n\${result.error.stack || ''}\` : undefined,
+      logs: result.stdout.map(s => s.toString().trim()).filter(Boolean),
+      apiPayload: apiAttachment ? JSON.parse(apiAttachment.body!.toString()) : undefined,
+    });
+  }
+  
+  onEnd(result: FullResult) {
+    const passed = this.results.filter(r => r.status === 'passed').length;
+    const failed = this.results.filter(r => r.status === 'failed').length;
+    const skipped = this.results.filter(r => r.status === 'skipped').length;
+    
+    const output = {
+      manifest: {
+        runId: \`run-\${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}\`,
+        timestamp: new Date().toISOString(),
+        branch: process.env.GIT_BRANCH || process.env.GITHUB_REF_NAME || 'unknown',
+        environment: process.env.TEST_ENV || 'local',
+        total: this.results.length,
+        passed, failed, skipped,
+        duration: Math.round((Date.now() - this.startTime) / 1000),
+      },
+      results: this.results,
+    };
+    
+    const outDir = process.env.REPORT_OUTPUT || 'test-results';
+    fs.mkdirSync(outDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(outDir, \`run-\${Date.now()}.json\`),
+      JSON.stringify(output, null, 2)
+    );
+  }
+}
+
+export default DashboardReporter;`}</CodeBlock>
+
+        <CodeBlock title="playwright.config.ts">{`import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  reporter: [
+    ['list'],
+    ['./reporters/dashboard-reporter.ts'],  // Add our reporter
+  ],
+  // ...
+});`}</CodeBlock>
+
+        <div className="flex items-start gap-2 p-3 rounded-md bg-primary/5 border border-primary/20">
+          <span className="text-sm">💡</span>
+          <p className="text-xs text-muted-foreground">
+            <strong className="text-foreground">CI Integration:</strong> Set <code className="font-mono bg-muted px-1 rounded">GIT_BRANCH</code> and{" "}
+            <code className="font-mono bg-muted px-1 rounded">TEST_ENV</code> environment variables in your CI pipeline to automatically tag runs with branch and environment metadata.
+          </p>
+        </div>
+      </Section>
+
+      {/* Result File Structure - field reference */}
+      <Section title="Result Schema Reference" icon="📋">
         <div className="space-y-3">
-          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Field Reference</h3>
+          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">TestResult Fields</h3>
           <div className="rounded-lg border overflow-hidden">
             <table className="w-full text-xs font-mono">
               <thead>
@@ -345,14 +477,51 @@ export default defineConfig({
               </thead>
               <tbody className="divide-y">
                 {[
+                  ["id", "string", "Unique test identifier"],
                   ["name", "string", "Format: 'suite > test name'"],
                   ["suite", "string", "Top-level describe() group"],
+                  ["file", "string", "Source file path"],
                   ["status", "enum", "'passed' | 'failed' | 'skipped'"],
-                  ["duration", "number", "Milliseconds for test result"],
+                  ["duration", "number", "Milliseconds for test execution"],
                   ["retries", "number", "Number of retry attempts"],
                   ["tags", "string[]", "Array of tag labels"],
                   ["error", "string?", "Error message + stack trace"],
                   ["logs", "string[]?", "Captured console output lines"],
+                  ["apiPayload", "ApiPayload?", "API request/response data"],
+                ].map(([field, type, desc]) => (
+                  <tr key={field} className="hover:bg-muted/30">
+                    <td className="px-3 py-2 text-foreground">{field}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{type}</td>
+                    <td className="px-3 py-2 text-muted-foreground font-sans">{desc}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">RunManifest Fields</h3>
+          <div className="rounded-lg border overflow-hidden">
+            <table className="w-full text-xs font-mono">
+              <thead>
+                <tr className="bg-muted">
+                  <th className="text-left px-3 py-2 text-muted-foreground font-medium">Field</th>
+                  <th className="text-left px-3 py-2 text-muted-foreground font-medium">Type</th>
+                  <th className="text-left px-3 py-2 text-muted-foreground font-medium">Description</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {[
+                  ["runId", "string", "Unique run identifier"],
+                  ["timestamp", "string", "ISO 8601 timestamp"],
+                  ["branch", "string", "Git branch name"],
+                  ["environment", "string", "Deploy environment (staging, prod)"],
+                  ["total", "number", "Total test count"],
+                  ["passed", "number", "Passed test count"],
+                  ["failed", "number", "Failed test count"],
+                  ["skipped", "number", "Skipped test count"],
+                  ["duration", "number", "Total duration in seconds"],
                 ].map(([field, type, desc]) => (
                   <tr key={field} className="hover:bg-muted/30">
                     <td className="px-3 py-2 text-foreground">{field}</td>
