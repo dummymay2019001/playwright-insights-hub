@@ -1,11 +1,18 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { TestRun } from "@/models/types";
 import { generateMockRuns } from "@/services/mockData";
+import { loadRunsFromStorage, saveRunsToStorage, clearStoredRuns } from "@/services/fileIngestion";
+
+type DataMode = "demo" | "imported";
 
 interface RunsContextValue {
   runs: TestRun[];
   loading: boolean;
+  dataMode: DataMode;
   getRunById: (id: string) => TestRun | undefined;
+  importRuns: (newRuns: TestRun[], append?: boolean) => void;
+  clearRuns: () => void;
+  switchToDemo: () => void;
 }
 
 const RunsContext = createContext<RunsContextValue | null>(null);
@@ -13,20 +20,62 @@ const RunsContext = createContext<RunsContextValue | null>(null);
 export function RunsProvider({ children }: { children: ReactNode }) {
   const [runs, setRuns] = useState<TestRun[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dataMode, setDataMode] = useState<DataMode>("demo");
 
   useEffect(() => {
-    // Simulate async loading from file system
-    const timer = setTimeout(() => {
-      setRuns(generateMockRuns(8));
+    // Check for persisted imported runs first
+    const stored = loadRunsFromStorage();
+    if (stored && stored.length > 0) {
+      setRuns(stored);
+      setDataMode("imported");
       setLoading(false);
-    }, 400);
-    return () => clearTimeout(timer);
+    } else {
+      // Fall back to demo data
+      const timer = setTimeout(() => {
+        setRuns(generateMockRuns(8));
+        setDataMode("demo");
+        setLoading(false);
+      }, 400);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
-  const getRunById = (id: string) => runs.find((r) => r.manifest.runId === id);
+  const getRunById = useCallback(
+    (id: string) => runs.find((r) => r.manifest.runId === id),
+    [runs]
+  );
+
+  const importRuns = useCallback((newRuns: TestRun[], append = false) => {
+    setRuns((prev) => {
+      const base = append && dataMode === "imported" ? prev : [];
+      const merged = [...base];
+      const existingIds = new Set(merged.map((r) => r.manifest.runId));
+      for (const run of newRuns) {
+        if (!existingIds.has(run.manifest.runId)) {
+          merged.push(run);
+          existingIds.add(run.manifest.runId);
+        }
+      }
+      saveRunsToStorage(merged);
+      return merged;
+    });
+    setDataMode("imported");
+  }, [dataMode]);
+
+  const clearRuns = useCallback(() => {
+    clearStoredRuns();
+    setRuns(generateMockRuns(8));
+    setDataMode("demo");
+  }, []);
+
+  const switchToDemo = useCallback(() => {
+    clearStoredRuns();
+    setRuns(generateMockRuns(8));
+    setDataMode("demo");
+  }, []);
 
   return (
-    <RunsContext.Provider value={{ runs, loading, getRunById }}>
+    <RunsContext.Provider value={{ runs, loading, dataMode, getRunById, importRuns, clearRuns, switchToDemo }}>
       {children}
     </RunsContext.Provider>
   );
