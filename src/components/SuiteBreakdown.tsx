@@ -23,6 +23,7 @@ interface SuiteStats {
 
 export function SuiteBreakdown({ results, runId }: SuiteBreakdownProps) {
   const [expandedSuite, setExpandedSuite] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const suites = useMemo(() => {
     const map = new Map<string, SuiteStats>();
