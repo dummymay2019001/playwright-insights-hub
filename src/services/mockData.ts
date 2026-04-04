@@ -90,8 +90,8 @@ function generateResults(runIndex: number): TestResult[] {
         duration: Math.round(baseDuration),
         retries,
         tags: TAGS_MAP[suite] || [],
-        error: status === "failed" ? `AssertionError: expected true to be false\n    at tests/${suite}.spec.ts:${Math.floor(rand() * 100 + 10)}:5` : undefined,
-        logs: status === "failed" ? [`[INFO] Starting ${name}`, `[ERROR] Assertion failed at step 3`] : undefined,
+        error: status === "failed" ? generateErrorMessage(suite, name, rand) : undefined,
+        logs: status === "failed" ? generateFailureLogs(name, rand) : undefined,
         apiPayload,
       });
     }
