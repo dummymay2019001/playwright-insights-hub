@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { TestResult } from "@/models/types";
 import { TestRow } from "@/components/TestRow";
 import { Badge } from "@/components/ui/badge";
