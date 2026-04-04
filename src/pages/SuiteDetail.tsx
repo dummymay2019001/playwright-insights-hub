@@ -25,9 +25,11 @@ const chartTooltipStyle = {
 const gridStroke = "hsl(220, 16%, 92%)";
 const tickStyle = { fontSize: 10, fontFamily: "var(--font-mono)", fill: "hsl(220, 10%, 46%)" };
 
+import { RunManifest, TestResult } from "@/models/types";
+
 interface SuiteRunEntry {
-  run: typeof import("@/models/types").TestRun.prototype extends never ? never : ReturnType<() => import("@/models/types").RunManifest>;
-  tests: import("@/models/types").TestResult[];
+  run: RunManifest;
+  tests: TestResult[];
   passed: number;
   failed: number;
   skipped: number;
