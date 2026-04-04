@@ -11,6 +11,7 @@ import Trends from "./pages/Trends.tsx";
 import Insights from "./pages/Insights.tsx";
 import TestDetail from "./pages/TestDetail.tsx";
 import ExportPage from "./pages/ExportPage.tsx";
+import SuiteDetail from "./pages/SuiteDetail.tsx";
 import HelpPage from "./pages/Help.tsx";
 import AboutPage from "./pages/About.tsx";
 import NotFound from "./pages/NotFound.tsx";
