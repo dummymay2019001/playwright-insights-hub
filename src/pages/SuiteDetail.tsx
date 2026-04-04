@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useRuns } from "@/store/RunsContext";
+import { RunManifest, TestResult } from "@/models/types";
 import { formatDate } from "@/utils/format";
 import { StatCard } from "@/components/StatCard";
 import { HealthGauge } from "@/components/HealthGauge";
@@ -24,8 +25,6 @@ const chartTooltipStyle = {
 };
 const gridStroke = "hsl(220, 16%, 92%)";
 const tickStyle = { fontSize: 10, fontFamily: "var(--font-mono)", fill: "hsl(220, 10%, 46%)" };
-
-import { RunManifest, TestResult } from "@/models/types";
 
 interface SuiteRunEntry {
   run: RunManifest;
