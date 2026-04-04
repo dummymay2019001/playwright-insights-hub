@@ -140,17 +140,37 @@ const DashboardPage = () => {
         />
       </div>
 
-      {/* Quick actions */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Button variant="outline" size="sm" className="font-mono text-xs" onClick={() => navigate("/trends")}>
-          📈 View Trends
-        </Button>
-        <Button variant="outline" size="sm" className="font-mono text-xs" onClick={() => navigate("/insights")}>
-          💡 Insights
-        </Button>
-        <Button variant="outline" size="sm" className="font-mono text-xs" onClick={() => navigate(`/export/${encodeURIComponent(metrics.latest.runId)}`)}>
-          📄 Export Latest
-        </Button>
+      {/* Data mode & quick actions */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="outline" size="sm" className="font-mono text-xs" onClick={() => navigate("/trends")}>
+            📈 View Trends
+          </Button>
+          <Button variant="outline" size="sm" className="font-mono text-xs" onClick={() => navigate("/insights")}>
+            💡 Insights
+          </Button>
+          <Button variant="outline" size="sm" className="font-mono text-xs" onClick={() => navigate(`/export/${encodeURIComponent(metrics.latest.runId)}`)}>
+            📄 Export Latest
+          </Button>
+          <FileDropZone onImport={handleImport} compact />
+        </div>
+        <div className="flex items-center gap-2">
+          {dataMode === "demo" && (
+            <span className="font-mono text-[10px] text-muted-foreground px-2 py-0.5 rounded-full bg-warning/10 border border-warning/20">
+              Demo Data
+            </span>
+          )}
+          {dataMode === "imported" && (
+            <>
+              <span className="font-mono text-[10px] text-muted-foreground px-2 py-0.5 rounded-full bg-success/10 border border-success/20">
+                Imported Data
+              </span>
+              <Button variant="ghost" size="sm" className="font-mono text-[10px] h-6 px-2 text-muted-foreground" onClick={switchToDemo}>
+                Reset Demo
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Run list */}
