@@ -33,6 +33,7 @@ const App = () => (
               <Route path="/test/:testName" element={<TestDetail />} />
               <Route path="/export/:runId" element={<ExportPage />} />
               <Route path="/help" element={<HelpPage />} />
+              <Route path="/about" element={<AboutPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AppShell>
