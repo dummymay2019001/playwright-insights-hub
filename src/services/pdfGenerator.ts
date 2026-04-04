@@ -32,7 +32,15 @@ function statusColor(status: string, mode: "color" | "grayscale"): [number, numb
 }
 
 export function generatePdfReport(run: TestRun, options: PdfExportOptions): void {
-  const m = run.manifest;
+  const rawM = run.manifest;
+  const ov = options.metadataOverrides;
+  const m = {
+    ...rawM,
+    runId: ov.runId || rawM.runId,
+    branch: ov.branch || rawM.branch,
+    environment: ov.environment || rawM.environment,
+    timestamp: ov.timestamp || rawM.timestamp,
+  };
   const rate = passRate(m);
   const cm = options.colorMode;
   const pageFormat = options.pageSize === "letter" ? "letter" : "a4";
