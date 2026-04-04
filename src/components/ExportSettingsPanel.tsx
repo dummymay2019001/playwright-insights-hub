@@ -90,7 +90,24 @@ export function ExportSettingsPanel({ options, onChange }: ExportSettingsPanelPr
 
       <Separator />
 
-      {/* SECTIONS */}
+      {/* METADATA OVERRIDES */}
+      <Section title="Metadata Overrides">
+        <p className="text-[10px] text-muted-foreground -mt-1">Leave blank to use original run values</p>
+        <Field label="Run ID">
+          <Input className="h-8 text-xs font-mono" placeholder="Original run ID" value={options.metadataOverrides.runId} onChange={(e) => update("metadataOverrides", { ...options.metadataOverrides, runId: e.target.value })} />
+        </Field>
+        <Field label="Branch">
+          <Input className="h-8 text-xs font-mono" placeholder="Original branch" value={options.metadataOverrides.branch} onChange={(e) => update("metadataOverrides", { ...options.metadataOverrides, branch: e.target.value })} />
+        </Field>
+        <Field label="Environment">
+          <Input className="h-8 text-xs font-mono" placeholder="Original environment" value={options.metadataOverrides.environment} onChange={(e) => update("metadataOverrides", { ...options.metadataOverrides, environment: e.target.value })} />
+        </Field>
+        <Field label="Timestamp">
+          <Input className="h-8 text-xs font-mono" placeholder="Original timestamp" value={options.metadataOverrides.timestamp} onChange={(e) => update("metadataOverrides", { ...options.metadataOverrides, timestamp: e.target.value })} />
+        </Field>
+      </Section>
+
+      <Separator />
       <Section title="Included Sections">
         <div className="space-y-1.5">
           {([
