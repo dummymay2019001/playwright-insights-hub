@@ -181,7 +181,98 @@ test('user can checkout', async ({ page }) => {
 await expect(true).toBe(false); // unhelpful error`}</CodeBlock>
       </Section>
 
-      {/* Retries & Flaky */}
+      {/* API Payloads */}
+      <Section title="API Request & Response Payloads" icon="🔗">
+        <p className="text-sm text-muted-foreground">
+          For API tests, the dashboard can render request/response payloads inline. Attach an <code className="font-mono text-xs bg-muted px-1 py-0.5 rounded">apiPayload</code> object 
+          to your test result to get collapsible headers, body, status code, and latency displayed neatly.
+        </p>
+        <CodeBlock title="Attaching API payloads in your test reporter">{`// In your custom Playwright reporter, attach payload data:
+// reporter.ts
+
+import { Reporter, TestCase, TestResult } from '@playwright/test/reporter';
+
+class DashboardReporter implements Reporter {
+  onTestEnd(test: TestCase, result: TestResult) {
+    // Extract API call data from attachments or test info
+    const apiData = result.attachments.find(a => a.name === 'api-payload');
+    
+    return {
+      ...baseResult,
+      apiPayload: apiData ? JSON.parse(apiData.body.toString()) : undefined,
+    };
+  }
+}`}</CodeBlock>
+
+        <CodeBlock title="Capturing API calls in your test">{`import { test, expect } from '@playwright/test';
+
+test('POST /orders', { tag: ['@api'] }, async ({ request }) => {
+  const payload = { productId: 'sku-123', quantity: 2, coupon: 'SAVE10' };
+  
+  const response = await request.post('/api/v1/orders', { data: payload });
+  const body = await response.json();
+
+  // Attach for the dashboard to render
+  test.info().attach('api-payload', {
+    contentType: 'application/json',
+    body: Buffer.from(JSON.stringify({
+      method: 'POST',
+      url: '/api/v1/orders',
+      statusCode: response.status(),
+      requestHeaders: { 'Content-Type': 'application/json' },
+      requestBody: payload,
+      responseHeaders: Object.fromEntries(response.headers()),
+      responseBody: body,
+      latency: 230,  // measure with performance.now()
+    })),
+  });
+
+  expect(response.ok()).toBeTruthy();
+  expect(body.orderId).toBeDefined();
+});`}</CodeBlock>
+
+        <div className="space-y-2">
+          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">ApiPayload Schema</h3>
+          <div className="rounded-lg border overflow-hidden">
+            <table className="w-full text-xs font-mono">
+              <thead>
+                <tr className="bg-muted">
+                  <th className="text-left px-3 py-2 text-muted-foreground font-medium">Field</th>
+                  <th className="text-left px-3 py-2 text-muted-foreground font-medium">Type</th>
+                  <th className="text-left px-3 py-2 text-muted-foreground font-medium">Description</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {[
+                  ["method", "string", "'GET' | 'POST' | 'PUT' | 'DELETE'"],
+                  ["url", "string", "API endpoint path"],
+                  ["statusCode", "number", "HTTP status code"],
+                  ["requestHeaders", "Record", "Request header key-value pairs"],
+                  ["requestBody", "any", "Parsed request body (JSON)"],
+                  ["responseHeaders", "Record", "Response header key-value pairs"],
+                  ["responseBody", "any", "Parsed response body (JSON)"],
+                  ["latency", "number", "Response time in milliseconds"],
+                ].map(([field, type, desc]) => (
+                  <tr key={field} className="hover:bg-muted/30">
+                    <td className="px-3 py-2 text-foreground">{field}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{type}</td>
+                    <td className="px-3 py-2 text-muted-foreground font-sans">{desc}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-2 p-3 rounded-md bg-primary/5 border border-primary/20">
+          <span className="text-sm">💡</span>
+          <p className="text-xs text-muted-foreground">
+            <strong className="text-foreground">Rendering:</strong> API tests show an <Badge variant="outline" className="font-mono text-[10px] bg-primary/10 text-primary border-primary/30 inline-flex">API</Badge> badge. 
+            Expand the test row to see method, URL, status code, latency, and collapsible request/response headers &amp; bodies — all formatted as JSON.
+          </p>
+        </div>
+      </Section>
+
       <Section title="Retries & Flaky Test Detection" icon="⚡">
         <p className="text-sm text-muted-foreground">
           The dashboard automatically detects flaky tests — tests that fail initially but pass on retry. Configure retries in your Playwright config:
