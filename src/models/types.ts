@@ -12,6 +12,17 @@ export interface RunManifest {
   duration: number; // seconds
 }
 
+export interface ApiPayload {
+  method?: string;
+  url?: string;
+  statusCode?: number;
+  requestHeaders?: Record<string, string>;
+  requestBody?: unknown;
+  responseHeaders?: Record<string, string>;
+  responseBody?: unknown;
+  latency?: number;
+}
+
 export interface TestResult {
   id: string;
   name: string;
@@ -23,6 +34,7 @@ export interface TestResult {
   tags: string[];
   error?: string;
   logs?: string[];
+  apiPayload?: ApiPayload;
 }
 
 export interface TestRun {

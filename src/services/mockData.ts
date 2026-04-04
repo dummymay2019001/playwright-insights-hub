@@ -1,4 +1,4 @@
-import { RunManifest, TestResult, TestRun, TestStatus } from "@/models/types";
+import { RunManifest, TestResult, TestRun, TestStatus, ApiPayload } from "@/models/types";
 
 const SUITES = ["auth", "checkout", "dashboard", "profile", "settings", "api", "navigation"];
 const TAGS_MAP: Record<string, string[]> = {
