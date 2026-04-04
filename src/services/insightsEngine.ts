@@ -60,6 +60,26 @@ export interface TestHealthScore {
   coverage: number;
 }
 
+export interface DurationBucket {
+  range: string;
+  count: number;
+  min: number;
+  max: number;
+}
+
+export interface StatusCodeSummary {
+  statusCode: number;
+  count: number;
+}
+
+export interface StatusMismatch {
+  testName: string;
+  suite: string;
+  expectedUrl: string;
+  expectedStatus?: number;
+  actualStatus?: number;
+}
+
 export function computeInsights(runs: TestRun[]) {
   const sorted = [...runs].sort(
     (a, b) => new Date(a.manifest.timestamp).getTime() - new Date(b.manifest.timestamp).getTime()
