@@ -64,12 +64,19 @@ const DashboardPage = () => {
 
   if (!metrics) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4">
+      <div className="flex flex-col items-center justify-center py-12 gap-6 max-w-xl mx-auto">
         <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
           <span className="text-3xl">📋</span>
         </div>
-        <p className="font-mono text-muted-foreground">No test runs loaded</p>
-        <Button variant="outline" onClick={() => navigate("/help")}>📖 Setup Guide</Button>
+        <div className="text-center">
+          <p className="font-mono text-sm font-medium text-foreground">No test runs loaded</p>
+          <p className="text-xs text-muted-foreground mt-1">Import your Playwright JSON results or explore with demo data</p>
+        </div>
+        <FileDropZone onImport={handleImport} />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={switchToDemo}>🎭 Load Demo Data</Button>
+          <Button variant="outline" size="sm" onClick={() => navigate("/help")}>📖 Setup Guide</Button>
+        </div>
       </div>
     );
   }
