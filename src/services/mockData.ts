@@ -58,8 +58,18 @@ function generateResults(runIndex: number): TestResult[] {
   const results: TestResult[] = [];
   let id = 0;
 
-  for (const suite of SUITES) {
-    for (const name of TEST_NAMES[suite]) {
+  // Gradually introduce suites: early runs have fewer suites
+  // Run 0: 3 suites, Run 1: 4, Run 2: 5, Run 3+: 6, Run 5+: all 7
+  const availableSuites = SUITES.slice(0, Math.min(SUITES.length, 3 + Math.floor(runIndex * 0.7)));
+
+  for (const suite of availableSuites) {
+    const allTests = TEST_NAMES[suite];
+    // Gradually introduce tests within a suite
+    // Early runs might have fewer tests per suite
+    const testCount = Math.min(allTests.length, Math.max(2, Math.floor(allTests.length * (0.5 + runIndex * 0.08))));
+    const availableTests = allTests.slice(0, testCount);
+
+    for (const name of availableTests) {
       id++;
       const r = rand();
       let status: TestStatus = "passed";
