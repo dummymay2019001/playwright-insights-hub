@@ -45,12 +45,21 @@ function generateResults(runIndex: number): TestResult[] {
       const retries = status === "failed" && rand() > 0.5 ? Math.floor(rand() * 3) + 1 : 0;
       const baseDuration = 200 + rand() * 4000;
 
+      const apiPayload: ApiPayload | undefined = suite === "api" ? generateApiPayload(name, status, rand) : undefined;
+
       results.push({
         id: `test-${runIndex}-${id}`,
         name: `${suite} > ${name}`,
         suite,
         file: `tests/${suite}.spec.ts`,
         status: retries > 0 && rand() > 0.6 ? "passed" : status,
+        duration: Math.round(baseDuration),
+        retries,
+        tags: TAGS_MAP[suite] || [],
+        error: status === "failed" ? `AssertionError: expected true to be false\n    at tests/${suite}.spec.ts:${Math.floor(rand() * 100 + 10)}:5` : undefined,
+        logs: status === "failed" ? [`[INFO] Starting ${name}`, `[ERROR] Assertion failed at step 3`] : undefined,
+        apiPayload,
+      });
         duration: Math.round(baseDuration),
         retries,
         tags: TAGS_MAP[suite] || [],
