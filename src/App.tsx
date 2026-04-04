@@ -29,6 +29,7 @@ const App = () => (
               <Route path="/trends" element={<Trends />} />
               <Route path="/insights" element={<Insights />} />
               <Route path="/test/:testName" element={<TestDetail />} />
+              <Route path="/export/:runId" element={<ExportPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AppShell>
