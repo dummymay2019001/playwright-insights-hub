@@ -38,9 +38,7 @@ const RunDetailPage = () => {
         map.set(tag, entry);
       }
     }
-    return [...map.entries()]
-      .map(([tag, stats]) => ({ tag, ...stats }))
-      .sort((a, b) => b.total - a.total);
+    return [...map.entries()].map(([tag, stats]) => ({ tag, ...stats })).sort((a, b) => b.total - a.total);
   }, [run]);
 
   const filtered = useMemo(() => {
@@ -53,7 +51,7 @@ const RunDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <div className="font-mono text-muted-foreground animate-pulse">Loading…</div>
       </div>
     );
@@ -61,7 +59,7 @@ const RunDetailPage = () => {
 
   if (!run) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
         <p className="font-mono text-muted-foreground">Run not found</p>
         <Button variant="outline" onClick={() => navigate("/")}>← Back to Dashboard</Button>
       </div>
@@ -72,77 +70,69 @@ const RunDetailPage = () => {
   const rate = passRate(m);
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card sticky top-0 z-10">
-        <div className="container py-3 flex items-center gap-3 sm:gap-4">
-          <Button variant="ghost" size="sm" className="font-mono text-xs" onClick={() => navigate("/")}>
-            ← Back
-          </Button>
-          <div className="flex-1 min-w-0">
-            <h1 className="font-mono text-xs sm:text-sm font-semibold text-foreground truncate">{m.runId}</h1>
-            <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <span className="text-xs text-muted-foreground">{formatDate(m.timestamp)}</span>
-              <Badge variant="outline" className="font-mono text-[10px] sm:text-xs">{m.branch}</Badge>
-              <Badge variant="outline" className="font-mono text-[10px] sm:text-xs">{m.environment}</Badge>
-            </div>
+    <div className="container py-4 sm:py-6 space-y-4 sm:space-y-6">
+      {/* Run header */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex-1 min-w-0">
+          <h2 className="font-mono text-sm sm:text-base font-semibold text-foreground truncate">{m.runId}</h2>
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <span className="text-xs text-muted-foreground">{formatDate(m.timestamp)}</span>
+            <Badge variant="outline" className="font-mono text-[10px] sm:text-xs">{m.branch}</Badge>
+            <Badge variant="outline" className="font-mono text-[10px] sm:text-xs">{m.environment}</Badge>
           </div>
-          <span className={`font-mono text-lg sm:text-xl font-bold ${rate >= 95 ? "text-success" : rate >= 80 ? "text-warning" : "text-destructive"}`}>
-            {rate}%
-          </span>
         </div>
-      </header>
+        <span className={`font-mono text-xl sm:text-2xl font-bold ${rate >= 95 ? "text-success" : rate >= 80 ? "text-warning" : "text-destructive"}`}>
+          {rate}%
+        </span>
+      </div>
 
-      <main className="container py-4 sm:py-6 space-y-4 sm:space-y-6">
-        {/* Stats + Pie */}
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_240px] gap-4">
-          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
-            <StatCard label="Total" value={m.total} />
-            <StatCard label="Passed" value={m.passed} variant="success" />
-            <StatCard label="Failed" value={m.failed} variant={m.failed > 0 ? "destructive" : "success"} />
-            <StatCard label="Skipped" value={m.skipped} variant="muted" />
-            <StatCard label="Duration" value={formatDuration(m.duration)} />
-          </div>
-          <StatusPieChart passed={m.passed} failed={m.failed} skipped={m.skipped} />
+      {/* Stats + Pie */}
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_240px] gap-4">
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
+          <StatCard label="Total" value={m.total} />
+          <StatCard label="Passed" value={m.passed} variant="success" />
+          <StatCard label="Failed" value={m.failed} variant={m.failed > 0 ? "destructive" : "success"} />
+          <StatCard label="Skipped" value={m.skipped} variant="muted" />
+          <StatCard label="Duration" value={formatDuration(m.duration)} />
         </div>
+        <StatusPieChart passed={m.passed} failed={m.failed} skipped={m.skipped} />
+      </div>
 
-        {/* Tag Summary */}
-        {tagSummary.length > 0 && (
-          <section>
-            <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Tags</h2>
-            <TagSummary tags={tagSummary} selectedTag={selectedTag} onSelectTag={setSelectedTag} />
-          </section>
-        )}
-
-        {/* Filters + Test List */}
+      {/* Tags */}
+      {tagSummary.length > 0 && (
         <section>
-          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-              Tests ({filtered.length})
-            </h2>
-            <div className="flex gap-1 flex-wrap">
-              {STATUS_FILTERS.map((f) => (
-                <Button
-                  key={f.value}
-                  variant={statusFilter === f.value ? "default" : "ghost"}
-                  size="sm"
-                  className="font-mono text-xs h-7 px-2 sm:px-3"
-                  onClick={() => setStatusFilter(f.value)}
-                >
-                  {f.label}
-                </Button>
-              ))}
-            </div>
-          </div>
-          <div className="space-y-1">
-            {filtered.map((t) => (
-              <TestRow key={t.id} test={t} runId={m.runId} />
-            ))}
-            {filtered.length === 0 && (
-              <p className="text-sm text-muted-foreground font-mono py-8 text-center">No tests match this filter</p>
-            )}
-          </div>
+          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Tags</h2>
+          <TagSummary tags={tagSummary} selectedTag={selectedTag} onSelectTag={setSelectedTag} />
         </section>
-      </main>
+      )}
+
+      {/* Filters + Test List */}
+      <section>
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Tests ({filtered.length})</h2>
+          <div className="flex gap-1 flex-wrap">
+            {STATUS_FILTERS.map((f) => (
+              <Button
+                key={f.value}
+                variant={statusFilter === f.value ? "default" : "ghost"}
+                size="sm"
+                className="font-mono text-xs h-7 px-2 sm:px-3"
+                onClick={() => setStatusFilter(f.value)}
+              >
+                {f.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-1">
+          {filtered.map((t) => (
+            <TestRow key={t.id} test={t} runId={m.runId} />
+          ))}
+          {filtered.length === 0 && (
+            <p className="text-sm text-muted-foreground font-mono py-8 text-center">No tests match this filter</p>
+          )}
+        </div>
+      </section>
     </div>
   );
 };
