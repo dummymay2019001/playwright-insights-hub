@@ -4,8 +4,10 @@ import { useRuns } from "@/store/RunsContext";
 import { RunRow } from "@/components/RunRow";
 import { StatCard } from "@/components/StatCard";
 import { HealthGauge } from "@/components/HealthGauge";
+import { FileDropZone } from "@/components/FileDropZone";
 import { passRate } from "@/utils/format";
 import { Button } from "@/components/ui/button";
+import { IngestionResult } from "@/services/fileIngestion";
 
 const DashboardPage = () => {
   const { runs, loading } = useRuns();
