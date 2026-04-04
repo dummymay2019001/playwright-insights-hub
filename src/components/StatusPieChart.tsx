@@ -7,9 +7,9 @@ interface StatusPieChartProps {
 }
 
 const COLORS = {
-  passed: "hsl(142, 70%, 45%)",
+  passed: "hsl(152, 60%, 40%)",
   failed: "hsl(0, 72%, 51%)",
-  skipped: "hsl(220, 15%, 50%)",
+  skipped: "hsl(220, 12%, 60%)",
 };
 
 export function StatusPieChart({ passed, failed, skipped }: StatusPieChartProps) {
@@ -25,34 +25,25 @@ export function StatusPieChart({ passed, failed, skipped }: StatusPieChartProps)
       <div className="h-48">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              innerRadius={45}
-              outerRadius={75}
-              paddingAngle={3}
-              dataKey="value"
-              stroke="none"
-            >
+            <Pie data={data} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3} dataKey="value" stroke="none">
               {data.map((entry, i) => (
                 <Cell key={i} fill={entry.color} />
               ))}
             </Pie>
             <Tooltip
               contentStyle={{
-                backgroundColor: "hsl(222, 44%, 9%)",
-                border: "1px solid hsl(220, 30%, 16%)",
+                backgroundColor: "hsl(var(--chart-tooltip-bg))",
+                border: "1px solid hsl(var(--chart-tooltip-border))",
                 borderRadius: "6px",
                 fontFamily: "var(--font-mono)",
                 fontSize: "12px",
-                color: "hsl(210, 40%, 93%)",
+                color: "hsl(var(--chart-tooltip-text))",
               }}
             />
           </PieChart>
         </ResponsiveContainer>
       </div>
-      <div className="flex justify-center gap-4 mt-1">
+      <div className="flex justify-center gap-4 mt-1 flex-wrap">
         {data.map((d) => (
           <div key={d.name} className="flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }} />

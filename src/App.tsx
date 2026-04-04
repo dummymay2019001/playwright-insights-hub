@@ -7,6 +7,7 @@ import { RunsProvider } from "@/store/RunsContext";
 import Index from "./pages/Index.tsx";
 import RunDetail from "./pages/RunDetail.tsx";
 import Trends from "./pages/Trends.tsx";
+import TestDetail from "./pages/TestDetail.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/run/:runId" element={<RunDetail />} />
             <Route path="/trends" element={<Trends />} />
+            <Route path="/test/:testName" element={<TestDetail />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
