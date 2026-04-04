@@ -117,34 +117,48 @@ const RunDetailPage = () => {
       <SuiteBreakdown results={run.results} runId={m.runId} />
 
       {/* Filters + Test List */}
-      <section>
-        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Tests ({filtered.length})</h2>
-          <div className="flex gap-1 flex-wrap">
-            {STATUS_FILTERS.map((f) => (
-              <Button
-                key={f.value}
-                variant={statusFilter === f.value ? "default" : "ghost"}
-                size="sm"
-                className="font-mono text-xs h-7 px-2 sm:px-3"
-                onClick={() => setStatusFilter(f.value)}
-              >
-                {f.label}
-              </Button>
-            ))}
-          </div>
-        </div>
-        <div className="space-y-1">
-          {filtered.map((t) => (
-            <TestRow key={t.id} test={t} runId={m.runId} />
-          ))}
-          {filtered.length === 0 && (
-            <p className="text-sm text-muted-foreground font-mono py-8 text-center">No tests match this filter</p>
-          )}
-        </div>
-      </section>
+      <TestListSection filtered={filtered} statusFilter={statusFilter} setStatusFilter={setStatusFilter} runId={m.runId} />
     </div>
   );
 };
+
+function TestListSection({ filtered, statusFilter, setStatusFilter, runId }: { filtered: typeof import("@/models/types").TestResult[]; statusFilter: TestStatus | "all"; setStatusFilter: (v: TestStatus | "all") => void; runId: string }) {
+  const searchKey = useCallback((t: any) => t.name, []);
+  const { search, setSearch, page, setPage, totalPages, paginated, totalFiltered } = useSearchPagination({ items: filtered, searchKey });
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Tests</h2>
+        <div className="flex gap-1 flex-wrap">
+          {STATUS_FILTERS.map((f) => (
+            <Button
+              key={f.value}
+              variant={statusFilter === f.value ? "default" : "ghost"}
+              size="sm"
+              className="font-mono text-xs h-7 px-2 sm:px-3"
+              onClick={() => setStatusFilter(f.value)}
+            >
+              {f.label}
+            </Button>
+          ))}
+        </div>
+      </div>
+      <SearchPaginationBar
+        search={search} onSearchChange={setSearch}
+        page={page} totalPages={totalPages} onPageChange={setPage}
+        totalFiltered={totalFiltered} totalItems={filtered.length}
+      />
+      <div className="space-y-1 mt-2">
+        {paginated.map((t: any) => (
+          <TestRow key={t.id} test={t} runId={runId} />
+        ))}
+        {totalFiltered === 0 && (
+          <p className="text-sm text-muted-foreground font-mono py-8 text-center">No tests match this filter</p>
+        )}
+      </div>
+    </section>
+  );
+}
 
 export default RunDetailPage;
