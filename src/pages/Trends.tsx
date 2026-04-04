@@ -121,6 +121,45 @@ const TrendsPage = () => {
         </section>
       </div>
 
+      {/* Suite & Test Growth */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <section className="rounded-lg border bg-card p-4">
+          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4">Test Count Growth</h2>
+          <div className="h-44">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="testGrowthGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(217, 91%, 50%)" stopOpacity={0.2} />
+                    <stop offset="100%" stopColor="hsl(217, 91%, 50%)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+                <XAxis dataKey="date" tick={tickStyle} />
+                <YAxis tick={tickStyle} />
+                <Tooltip contentStyle={chartTooltipStyle} />
+                <Area type="monotone" dataKey="tests" stroke="hsl(217, 91%, 50%)" strokeWidth={2} fill="url(#testGrowthGrad)" name="Tests" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+
+        <section className="rounded-lg border bg-card p-4">
+          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4">Suite Count Growth</h2>
+          <div className="h-44">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+                <XAxis dataKey="date" tick={tickStyle} />
+                <YAxis tick={tickStyle} allowDecimals={false} />
+                <Tooltip contentStyle={chartTooltipStyle} />
+                <Bar dataKey="suites" fill="hsl(262, 80%, 55%)" radius={[4, 4, 0, 0]} name="Suites" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+      </div>
+
       {comparison && (
         <section className="rounded-lg border bg-card p-4 space-y-4">
           <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Run Comparison: Latest vs Previous</h2>
