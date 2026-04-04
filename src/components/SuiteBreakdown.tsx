@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { TestResult } from "@/models/types";
 import { TestRow } from "@/components/TestRow";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +23,7 @@ interface SuiteStats {
 
 export function SuiteBreakdown({ results, runId }: SuiteBreakdownProps) {
   const [expandedSuite, setExpandedSuite] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const suites = useMemo(() => {
     const map = new Map<string, SuiteStats>();
@@ -58,6 +60,13 @@ export function SuiteBreakdown({ results, runId }: SuiteBreakdownProps) {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-mono text-sm font-semibold text-foreground">{s.suite}</span>
                       <Badge variant="outline" className="font-mono text-[10px]">{s.file}</Badge>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); navigate(`/suite/${encodeURIComponent(s.suite)}`); }}
+                        className="font-mono text-[10px] text-primary hover:underline"
+                        title="View suite history"
+                      >
+                        📊 History
+                      </button>
                     </div>
                     <div className="mt-1.5">
                       <Progress value={rate} className="h-1.5" />
