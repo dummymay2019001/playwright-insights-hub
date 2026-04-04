@@ -60,6 +60,13 @@ export function SuiteBreakdown({ results, runId }: SuiteBreakdownProps) {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-mono text-sm font-semibold text-foreground">{s.suite}</span>
                       <Badge variant="outline" className="font-mono text-[10px]">{s.file}</Badge>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); navigate(`/suite/${encodeURIComponent(s.suite)}`); }}
+                        className="font-mono text-[10px] text-primary hover:underline"
+                        title="View suite history"
+                      >
+                        📊 History
+                      </button>
                     </div>
                     <div className="mt-1.5">
                       <Progress value={rate} className="h-1.5" />
