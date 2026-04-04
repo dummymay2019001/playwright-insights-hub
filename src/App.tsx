@@ -31,6 +31,7 @@ const App = () => (
               <Route path="/insights" element={<Insights />} />
               <Route path="/test/:testName" element={<TestDetail />} />
               <Route path="/export/:runId" element={<ExportPage />} />
+              <Route path="/help" element={<HelpPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AppShell>

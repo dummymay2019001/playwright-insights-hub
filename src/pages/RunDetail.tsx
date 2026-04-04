@@ -112,6 +112,9 @@ const RunDetailPage = () => {
         </section>
       )}
 
+      {/* Suite Breakdown */}
+      <SuiteBreakdown results={run.results} runId={m.runId} />
+
       {/* Filters + Test List */}
       <section>
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
