@@ -8,7 +8,6 @@ import { TestRow } from "@/components/TestRow";
 import { TagSummary } from "@/components/TagSummary";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExportDialog } from "@/components/ExportDialog";
 import { TestStatus } from "@/models/types";
 
 const STATUS_FILTERS: { label: string; value: TestStatus | "all" }[] = [
