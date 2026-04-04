@@ -6,8 +6,6 @@ import { HealthGauge } from "@/components/HealthGauge";
 import { InsightSection } from "@/components/InsightSection";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Badge } from "@/components/ui/badge";
-import { DurationDistribution } from "@/components/DurationDistribution";
-import { StatusCodeInsights } from "@/components/StatusCodeInsights";
 
 const InsightsPage = () => {
   const { runs, loading } = useRuns();
@@ -58,20 +56,6 @@ const InsightsPage = () => {
           <HealthGauge score={healthScore.speed} label="Speed" />
         </div>
       </section>
-
-      {/* Duration Insights */}
-      {insights.slowestTests.length > 0 && (
-        <section>
-          <DurationDistribution buckets={insights.durationBuckets} slowestTests={insights.slowestTests} />
-        </section>
-      )}
-
-      {/* API Status Code Insights */}
-      {insights.statusCodeSummary.length > 0 && (
-        <section>
-          <StatusCodeInsights summary={insights.statusCodeSummary} mismatches={insights.statusMismatches} />
-        </section>
-      )}
 
       {/* Insights Sections */}
       <section className="space-y-3">
