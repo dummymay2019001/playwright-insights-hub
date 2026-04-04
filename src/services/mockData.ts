@@ -62,8 +62,6 @@ function generateResults(runIndex: number): TestResult[] {
       });
     }
   }
-    }
-  }
   return results;
 }
 
