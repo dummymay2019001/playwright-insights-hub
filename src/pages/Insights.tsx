@@ -59,6 +59,20 @@ const InsightsPage = () => {
         </div>
       </section>
 
+      {/* Duration Insights */}
+      {insights.slowestTests.length > 0 && (
+        <section>
+          <DurationDistribution buckets={insights.durationBuckets} slowestTests={insights.slowestTests} />
+        </section>
+      )}
+
+      {/* API Status Code Insights */}
+      {insights.statusCodeSummary.length > 0 && (
+        <section>
+          <StatusCodeInsights summary={insights.statusCodeSummary} mismatches={insights.statusMismatches} />
+        </section>
+      )}
+
       {/* Insights Sections */}
       <section className="space-y-3">
         <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Actionable Insights</h2>
