@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useRuns } from "@/store/RunsContext";
 import { formatDate, formatDuration, passRate } from "@/utils/format";
@@ -7,6 +7,7 @@ import { StatusPieChart } from "@/components/StatusPieChart";
 import { TestRow } from "@/components/TestRow";
 import { TagSummary } from "@/components/TagSummary";
 import { SuiteBreakdown } from "@/components/SuiteBreakdown";
+import { useSearchPagination, SearchPaginationBar } from "@/components/SearchPagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TestStatus } from "@/models/types";
