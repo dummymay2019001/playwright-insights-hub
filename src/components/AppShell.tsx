@@ -12,7 +12,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isDetailPage = location.pathname.startsWith("/run/") || location.pathname.startsWith("/test/");
+  const isDetailPage = location.pathname.startsWith("/run/") || location.pathname.startsWith("/test/") || location.pathname.startsWith("/export/");
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
