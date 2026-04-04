@@ -10,21 +10,48 @@ function getColor(score: number) {
   return "text-destructive";
 }
 
-function getBg(score: number) {
-  if (score >= 90) return "bg-success/10 border-success/20";
-  if (score >= 70) return "bg-warning/10 border-warning/20";
-  return "bg-destructive/10 border-destructive/20";
+function getStroke(score: number) {
+  if (score >= 90) return "hsl(var(--success))";
+  if (score >= 70) return "hsl(var(--warning))";
+  return "hsl(var(--destructive))";
 }
 
 export function HealthGauge({ score, label, size = "sm" }: HealthGaugeProps) {
   const isLg = size === "lg";
+  const dim = isLg ? 96 : 64;
+  const r = isLg ? 38 : 25;
+  const stroke = isLg ? 6 : 4;
+  const circumference = 2 * Math.PI * r;
+  const offset = circumference - (score / 100) * circumference;
 
   return (
-    <div className={`rounded-lg border p-3 sm:p-4 text-center ${getBg(score)}`}>
-      <p className={`font-mono font-bold ${getColor(score)} ${isLg ? "text-3xl sm:text-4xl" : "text-xl sm:text-2xl"}`}>
-        {score}
-      </p>
-      <p className="text-[10px] sm:text-xs text-muted-foreground font-medium uppercase tracking-wider mt-1">{label}</p>
+    <div className="flex flex-col items-center gap-1">
+      <div className="relative" style={{ width: dim, height: dim }}>
+        <svg width={dim} height={dim} className="-rotate-90">
+          <circle
+            cx={dim / 2} cy={dim / 2} r={r}
+            fill="none"
+            stroke="hsl(var(--border))"
+            strokeWidth={stroke}
+          />
+          <circle
+            cx={dim / 2} cy={dim / 2} r={r}
+            fill="none"
+            stroke={getStroke(score)}
+            strokeWidth={stroke}
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            strokeLinecap="round"
+            className="transition-all duration-700 ease-out"
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className={`font-mono font-bold ${getColor(score)} ${isLg ? "text-xl" : "text-sm"}`}>
+            {score}%
+          </span>
+        </div>
+      </div>
+      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{label}</p>
     </div>
   );
 }
