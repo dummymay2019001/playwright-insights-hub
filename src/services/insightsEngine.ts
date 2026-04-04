@@ -262,6 +262,40 @@ export function computeInsights(runs: TestRun[]) {
     coverage: Math.round(latestPassRate),
   };
 
+  // 9. Duration Distribution
+  const durationBuckets: DurationBucket[] = [
+    { range: '<0.5s', min: 0, max: 500, count: 0 },
+    { range: '0.5–1s', min: 500, max: 1000, count: 0 },
+    { range: '1–2s', min: 1000, max: 2000, count: 0 },
+    { range: '2–5s', min: 2000, max: 5000, count: 0 },
+    { range: '5s+', min: 5000, max: Infinity, count: 0 },
+  ];
+  for (const t of latest.results) {
+    const bucket = durationBuckets.find(b => t.duration >= b.min && t.duration < b.max);
+    if (bucket) bucket.count++;
+  }
+
+  // 10. API Status Code Insights
+  const statusCodeMap = new Map<number, number>();
+  const statusMismatches: StatusMismatch[] = [];
+  for (const t of latest.results) {
+    if (t.apiPayload?.statusCode) {
+      statusCodeMap.set(t.apiPayload.statusCode, (statusCodeMap.get(t.apiPayload.statusCode) || 0) + 1);
+    }
+    // Detect mismatches: failed API tests where status code suggests an error
+    if (t.apiPayload && t.status === "failed" && t.apiPayload.statusCode && t.apiPayload.statusCode >= 400) {
+      statusMismatches.push({
+        testName: t.name,
+        suite: t.suite,
+        expectedUrl: t.apiPayload.url || '',
+        actualStatus: t.apiPayload.statusCode,
+      });
+    }
+  }
+  const statusCodeSummary: StatusCodeSummary[] = [...statusCodeMap.entries()]
+    .map(([statusCode, count]) => ({ statusCode, count }))
+    .sort((a, b) => a.statusCode - b.statusCode);
+
   return {
     newlyFailing,
     frequentlyFailing,
@@ -271,6 +305,9 @@ export function computeInsights(runs: TestRun[]) {
     suiteHealth,
     failureHotspots,
     healthScore,
+    durationBuckets,
+    statusCodeSummary,
+    statusMismatches,
     totalUniqueTests: allTestNames.size,
     totalRuns: sorted.length,
   };
