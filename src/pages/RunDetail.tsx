@@ -122,7 +122,7 @@ const RunDetailPage = () => {
   );
 };
 
-function TestListSection({ filtered, statusFilter, setStatusFilter, runId }: { filtered: typeof import("@/models/types").TestResult[]; statusFilter: TestStatus | "all"; setStatusFilter: (v: TestStatus | "all") => void; runId: string }) {
+function TestListSection({ filtered, statusFilter, setStatusFilter, runId }: { filtered: any[]; statusFilter: TestStatus | "all"; setStatusFilter: (v: TestStatus | "all") => void; runId: string }) {
   const searchKey = useCallback((t: any) => t.name, []);
   const { search, setSearch, page, setPage, totalPages, paginated, totalFiltered } = useSearchPagination({ items: filtered, searchKey });
 
