@@ -1,6 +1,8 @@
+import { useNavigate } from "react-router-dom";
 import { useRuns } from "@/store/RunsContext";
 import { RunRow } from "@/components/RunRow";
 import { StatCard } from "@/components/StatCard";
+import { Button } from "@/components/ui/button";
 
 const DashboardPage = () => {
   const { runs, loading } = useRuns();
