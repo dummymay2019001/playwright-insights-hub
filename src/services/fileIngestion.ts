@@ -1,4 +1,5 @@
 import { TestRun, RunManifest, TestResult, TestStatus } from "@/models/types";
+import { isPlaywrightNativeReport, parsePlaywrightNativeReport } from "@/services/playwrightNativeParser";
 
 export interface IngestionError {
   file: string;
