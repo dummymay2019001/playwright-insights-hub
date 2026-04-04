@@ -1,4 +1,4 @@
-import { RunManifest, TestResult, TestRun, TestStatus } from "@/models/types";
+import { RunManifest, TestResult, TestRun, TestStatus, ApiPayload } from "@/models/types";
 
 const SUITES = ["auth", "checkout", "dashboard", "profile", "settings", "api", "navigation"];
 const TAGS_MAP: Record<string, string[]> = {
@@ -29,6 +29,30 @@ function seededRandom(seed: number) {
   };
 }
 
+const API_ENDPOINTS: Record<string, { method: string; url: string; reqBody?: unknown; resBody: (ok: boolean) => unknown }> = {
+  "GET /users": { method: "GET", url: "/api/v1/users", resBody: (ok) => ok ? { users: [{ id: 1, name: "Alice" }, { id: 2, name: "Bob" }], total: 2 } : { error: "Unauthorized", code: 401 } },
+  "POST /orders": { method: "POST", url: "/api/v1/orders", reqBody: { productId: "sku-123", quantity: 2, coupon: "SAVE10" }, resBody: (ok) => ok ? { orderId: "ord-9876", status: "confirmed", total: 89.99 } : { error: "Out of stock", code: 422 } },
+  "PUT /settings": { method: "PUT", url: "/api/v1/settings", reqBody: { theme: "dark", locale: "en-US", notifications: true }, resBody: (ok) => ok ? { updated: true } : { error: "Validation failed", code: 400 } },
+  "DELETE /session": { method: "DELETE", url: "/api/v1/session", resBody: (ok) => ok ? { success: true } : { error: "Session not found", code: 404 } },
+  "rate limiting": { method: "GET", url: "/api/v1/health", resBody: (ok) => ok ? { status: "ok", rateLimit: { remaining: 98, limit: 100 } } : { error: "Too Many Requests", code: 429 } },
+};
+
+function generateApiPayload(testName: string, status: TestStatus, rand: () => number): ApiPayload {
+  const endpoint = API_ENDPOINTS[testName];
+  if (!endpoint) return { method: "GET", url: "/api/unknown", statusCode: 200, latency: Math.round(rand() * 500) };
+  const ok = status === "passed";
+  return {
+    method: endpoint.method,
+    url: endpoint.url,
+    statusCode: ok ? (endpoint.method === "POST" ? 201 : 200) : [400, 401, 404, 422, 429][Math.floor(rand() * 5)],
+    requestHeaders: { "Content-Type": "application/json", "Authorization": "Bearer eyJhbG...truncated" },
+    requestBody: endpoint.reqBody,
+    responseHeaders: { "Content-Type": "application/json", "X-Request-Id": `req-${Math.floor(rand() * 99999)}` },
+    responseBody: endpoint.resBody(ok),
+    latency: Math.round(50 + rand() * 450),
+  };
+}
+
 function generateResults(runIndex: number): TestResult[] {
   const rand = seededRandom(runIndex * 1000 + 42);
   const results: TestResult[] = [];
@@ -45,6 +69,8 @@ function generateResults(runIndex: number): TestResult[] {
       const retries = status === "failed" && rand() > 0.5 ? Math.floor(rand() * 3) + 1 : 0;
       const baseDuration = 200 + rand() * 4000;
 
+      const apiPayload: ApiPayload | undefined = suite === "api" ? generateApiPayload(name, status, rand) : undefined;
+
       results.push({
         id: `test-${runIndex}-${id}`,
         name: `${suite} > ${name}`,
@@ -56,6 +82,7 @@ function generateResults(runIndex: number): TestResult[] {
         tags: TAGS_MAP[suite] || [],
         error: status === "failed" ? `AssertionError: expected true to be false\n    at tests/${suite}.spec.ts:${Math.floor(rand() * 100 + 10)}:5` : undefined,
         logs: status === "failed" ? [`[INFO] Starting ${name}`, `[ERROR] Assertion failed at step 3`] : undefined,
+        apiPayload,
       });
     }
   }
