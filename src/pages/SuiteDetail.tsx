@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useRuns } from "@/store/RunsContext";
 import { RunManifest, TestResult } from "@/models/types";
