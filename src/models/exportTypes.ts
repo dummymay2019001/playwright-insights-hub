@@ -67,6 +67,7 @@ export const defaultExportOptions: PdfExportOptions = {
   includeSuiteBreakdown: true,
   includeDurationAnalysis: true,
   includeMetadata: true,
+  metadataOverrides: { runId: "", branch: "", environment: "", timestamp: "" },
   colorMode: "color",
   pageSize: "a4",
 };
