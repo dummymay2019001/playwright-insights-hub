@@ -25,6 +25,18 @@ const chartTooltipStyle = {
 const gridStroke = "hsl(220, 16%, 92%)";
 const tickStyle = { fontSize: 10, fontFamily: "var(--font-mono)", fill: "hsl(220, 10%, 46%)" };
 
+interface SuiteRunEntry {
+  run: typeof import("@/models/types").TestRun.prototype extends never ? never : ReturnType<() => import("@/models/types").RunManifest>;
+  tests: import("@/models/types").TestResult[];
+  passed: number;
+  failed: number;
+  skipped: number;
+  total: number;
+  duration: number;
+  retries: number;
+  passRate: number;
+}
+
 const SuiteDetailPage = () => {
   const { suiteName } = useParams<{ suiteName: string }>();
   const navigate = useNavigate();
@@ -32,19 +44,20 @@ const SuiteDetailPage = () => {
   const decodedName = suiteName ? decodeURIComponent(suiteName) : "";
 
   // Aggregate suite data across all runs
-  const history = useMemo(() => {
+  const history = useMemo((): SuiteRunEntry[] => {
     const sorted = [...runs].sort(
       (a, b) => new Date(a.manifest.timestamp).getTime() - new Date(b.manifest.timestamp).getTime()
     );
-    return sorted.map((run) => {
+    const entries: SuiteRunEntry[] = [];
+    for (const run of sorted) {
       const suiteTests = run.results.filter((t) => t.suite === decodedName);
-      if (suiteTests.length === 0) return null;
+      if (suiteTests.length === 0) continue;
       const passed = suiteTests.filter((t) => t.status === "passed").length;
       const failed = suiteTests.filter((t) => t.status === "failed").length;
       const skipped = suiteTests.filter((t) => t.status === "skipped").length;
       const duration = suiteTests.reduce((s, t) => s + t.duration, 0);
       const retries = suiteTests.reduce((s, t) => s + t.retries, 0);
-      return {
+      entries.push({
         run: run.manifest,
         tests: suiteTests,
         passed, failed, skipped,
@@ -52,8 +65,9 @@ const SuiteDetailPage = () => {
         duration,
         retries,
         passRate: Math.round((passed / suiteTests.length) * 100),
-      };
-    }).filter(Boolean) as NonNullable<ReturnType<typeof Array.prototype.map>[number]>[];
+      });
+    }
+    return entries;
   }, [runs, decodedName]);
 
   // Overall stats
