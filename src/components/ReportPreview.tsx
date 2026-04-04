@@ -22,7 +22,15 @@ function rateClass(rate: number, cm: string) {
 }
 
 export function ReportPreview({ run, options }: ReportPreviewProps) {
-  const m = run.manifest;
+  const rawM = run.manifest;
+  const ov = options.metadataOverrides;
+  const m = {
+    ...rawM,
+    runId: ov.runId || rawM.runId,
+    branch: ov.branch || rawM.branch,
+    environment: ov.environment || rawM.environment,
+    timestamp: ov.timestamp || rawM.timestamp,
+  };
   const rate = passRate(m);
   const cm = options.colorMode;
   const isGray = cm === "grayscale";

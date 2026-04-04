@@ -31,6 +31,14 @@ export interface PdfExportOptions {
   includeDurationAnalysis: boolean;
   includeMetadata: boolean;
 
+  // Metadata Overrides (empty = use original from run)
+  metadataOverrides: {
+    runId: string;
+    branch: string;
+    environment: string;
+    timestamp: string;
+  };
+
   // Formatting
   colorMode: "color" | "grayscale";
   pageSize: "a4" | "letter";
@@ -59,6 +67,7 @@ export const defaultExportOptions: PdfExportOptions = {
   includeSuiteBreakdown: true,
   includeDurationAnalysis: true,
   includeMetadata: true,
+  metadataOverrides: { runId: "", branch: "", environment: "", timestamp: "" },
   colorMode: "color",
   pageSize: "a4",
 };
