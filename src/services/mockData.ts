@@ -53,6 +53,35 @@ function generateApiPayload(testName: string, status: TestStatus, rand: () => nu
   };
 }
 
+const ERROR_TEMPLATES = [
+  { category: "Assertion", msg: (suite: string, line: number) => `AssertionError: expected element to be visible\n    at tests/${suite}.spec.ts:${line}:5` },
+  { category: "Assertion", msg: (suite: string, line: number) => `AssertionError: expected "0" to equal "3"\n    at tests/${suite}.spec.ts:${line}:12` },
+  { category: "Timeout", msg: (suite: string, line: number) => `TimeoutError: locator.click: Timeout 30000ms exceeded\n    waiting for selector ".submit-btn"\n    at tests/${suite}.spec.ts:${line}:8` },
+  { category: "Timeout", msg: (suite: string, line: number) => `TimeoutError: page.waitForNavigation: Timeout 30000ms exceeded\n    at tests/${suite}.spec.ts:${line}:3` },
+  { category: "Network", msg: (suite: string, line: number) => `Error: net::ERR_CONNECTION_REFUSED at /api/v1/health\n    at tests/${suite}.spec.ts:${line}:10` },
+  { category: "Network", msg: (suite: string, line: number) => `Error: Request failed with status 502 (Bad Gateway)\n    at tests/${suite}.spec.ts:${line}:7` },
+  { category: "Element Not Found", msg: (suite: string, line: number) => `Error: locator.fill: Error: Element not found: #email-input\n    at tests/${suite}.spec.ts:${line}:5` },
+  { category: "Element Not Found", msg: (suite: string, line: number) => `Error: page.click: No element matches selector: [data-testid="checkout-btn"]\n    at tests/${suite}.spec.ts:${line}:9` },
+  { category: "State Mismatch", msg: (suite: string, line: number) => `AssertionError: expected URL "/dashboard" but got "/login"\n    at tests/${suite}.spec.ts:${line}:5` },
+  { category: "State Mismatch", msg: (suite: string, line: number) => `AssertionError: expected element text "Success" but received "Error"\n    at tests/${suite}.spec.ts:${line}:11` },
+  { category: "Script Error", msg: (suite: string, line: number) => `TypeError: Cannot read properties of null (reading 'textContent')\n    at tests/${suite}.spec.ts:${line}:14` },
+  { category: "Script Error", msg: (suite: string, line: number) => `ReferenceError: userData is not defined\n    at tests/${suite}.spec.ts:${line}:3` },
+];
+
+function generateErrorMessage(suite: string, _name: string, rand: () => number): string {
+  const template = ERROR_TEMPLATES[Math.floor(rand() * ERROR_TEMPLATES.length)];
+  const line = Math.floor(rand() * 100 + 10);
+  return template.msg(suite, line);
+}
+
+function generateFailureLogs(name: string, rand: () => number): string[] {
+  const logs = [`[INFO] Starting ${name}`];
+  if (rand() > 0.5) logs.push(`[WARN] Slow response detected (${Math.floor(rand() * 3000 + 1000)}ms)`);
+  if (rand() > 0.3) logs.push(`[DEBUG] Current state: ${rand() > 0.5 ? "authenticated" : "unauthenticated"}`);
+  logs.push(`[ERROR] ${rand() > 0.5 ? "Assertion failed at step 3" : "Element not interactive"}`);
+  return logs;
+}
+
 function generateResults(runIndex: number): TestResult[] {
   const rand = seededRandom(runIndex * 1000 + 42);
   const results: TestResult[] = [];
