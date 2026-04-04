@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { RunsProvider } from "@/store/RunsContext";
 import Index from "./pages/Index.tsx";
 import RunDetail from "./pages/RunDetail.tsx";
+import Trends from "./pages/Trends.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -20,6 +21,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/run/:runId" element={<RunDetail />} />
+            <Route path="/trends" element={<Trends />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

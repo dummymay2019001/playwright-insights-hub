@@ -1,9 +1,12 @@
+import { useNavigate } from "react-router-dom";
 import { useRuns } from "@/store/RunsContext";
 import { RunRow } from "@/components/RunRow";
 import { StatCard } from "@/components/StatCard";
+import { Button } from "@/components/ui/button";
 
 const DashboardPage = () => {
   const { runs, loading } = useRuns();
+  const navigate = useNavigate();
 
   if (loading) {
     return (
@@ -30,10 +33,13 @@ const DashboardPage = () => {
           <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
             <span className="text-primary-foreground font-mono font-bold text-sm">PW</span>
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-lg font-semibold text-foreground">Playwright Test Intelligence</h1>
             <p className="text-xs text-muted-foreground">Dashboard · {totalRuns} runs loaded</p>
           </div>
+          <Button variant="outline" size="sm" className="font-mono text-xs" onClick={() => navigate("/trends")}>
+            📈 Trends
+          </Button>
         </div>
       </header>
 
