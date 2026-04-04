@@ -10,8 +10,12 @@ import { Button } from "@/components/ui/button";
 import { IngestionResult } from "@/services/fileIngestion";
 
 const DashboardPage = () => {
-  const { runs, loading } = useRuns();
+  const { runs, loading, dataMode, importRuns, switchToDemo } = useRuns();
   const navigate = useNavigate();
+
+  const handleImport = (result: IngestionResult) => {
+    importRuns(result.runs, true);
+  };
 
   const metrics = useMemo(() => {
     if (runs.length === 0) return null;
