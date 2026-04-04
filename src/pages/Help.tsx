@@ -391,6 +391,75 @@ test.describe('auth', () => {
   test('auth login works', ...); // "auth" is duplicated
 });`}</CodeBlock>
       </Section>
+
+      {/* Failure Cause Analysis */}
+      <Section title="Failure Cause Analysis & Trends" icon="🔬">
+        <p className="text-sm text-muted-foreground">
+          Each test's detail page automatically categorizes failures into actionable groups and shows pass/fail trends over time. 
+          The dashboard classifies errors into these categories:
+        </p>
+
+        <div className="rounded-lg border overflow-hidden">
+          <table className="w-full text-xs font-mono">
+            <thead>
+              <tr className="bg-muted">
+                <th className="text-left px-3 py-2 text-muted-foreground font-medium">Category</th>
+                <th className="text-left px-3 py-2 text-muted-foreground font-medium">Detected By</th>
+                <th className="text-left px-3 py-2 text-muted-foreground font-medium">Example</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {[
+                ["⏱️ Timeout", "\"Timeout\" in error", "TimeoutError: locator.click: Timeout 30000ms exceeded"],
+                ["🌐 Network", "\"net::ERR\", \"502\", \"connection\"", "Error: net::ERR_CONNECTION_REFUSED"],
+                ["🔍 Element Not Found", "\"not found\", \"no element matches\"", "Error: Element not found: #email-input"],
+                ["🔀 State Mismatch", "\"expected\" + URL/text comparison", "expected URL \"/dashboard\" but got \"/login\""],
+                ["💥 Script Error", "\"TypeError\", \"ReferenceError\"", "TypeError: Cannot read properties of null"],
+                ["❌ Assertion", "\"assert\" in error", "AssertionError: expected element to be visible"],
+              ].map(([cat, detection, example]) => (
+                <tr key={cat} className="hover:bg-muted/30">
+                  <td className="px-3 py-2 text-foreground font-sans">{cat}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{detection}</td>
+                  <td className="px-3 py-2 text-destructive/70 truncate max-w-[250px]">{example}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <CodeBlock title="Writing categorizable error messages">{`// ✅ Good — produces clear "Timeout" category
+await page.locator('.submit-btn').click({ timeout: 10000 });
+// Error: "TimeoutError: locator.click: Timeout 10000ms exceeded"
+
+// ✅ Good — produces clear "Assertion" category
+await expect(page.locator('.cart-count')).toHaveText('3');
+// Error: "AssertionError: expected '0' to equal '3'"
+
+// ✅ Good — produces clear "State Mismatch" category
+await expect(page).toHaveURL('/dashboard');
+// Error: "expected URL '/dashboard' but got '/login'"
+
+// ❌ Avoid — produces unhelpful "Other" category
+throw new Error('Test failed');
+// Better: throw new Error('Expected cart total $49.99 but got $0.00');`}</CodeBlock>
+
+        <div className="flex items-start gap-2 p-3 rounded-md bg-primary/5 border border-primary/20">
+          <span className="text-sm">💡</span>
+          <p className="text-xs text-muted-foreground">
+            <strong className="text-foreground">Pro tip:</strong> Use Playwright's built-in assertions (<code className="font-mono bg-muted px-1 rounded">expect(locator).toHaveText()</code>, 
+            <code className="font-mono bg-muted px-1 rounded">expect(page).toHaveURL()</code>) instead of generic <code className="font-mono bg-muted px-1 rounded">throw new Error()</code>. 
+            They produce structured error messages that the dashboard can automatically categorize and group.
+          </p>
+        </div>
+
+        <div className="flex items-start gap-2 p-3 rounded-md bg-success/10 border border-success/30">
+          <span className="text-sm">📊</span>
+          <p className="text-xs text-muted-foreground">
+            <strong className="text-foreground">What you get:</strong> On each test's detail page you'll see a <strong>Pass/Fail Trend</strong> chart showing status across runs, 
+            plus a <strong>Failure Cause Analysis</strong> panel that groups failures by category, shows frequency, sample errors, and actionable fix suggestions.
+          </p>
+        </div>
+      </Section>
     </div>
   );
 };
