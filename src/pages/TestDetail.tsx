@@ -203,29 +203,28 @@ const TestDetailPage = () => {
         </div>
       )}
 
-      {/* Pass/Fail Trend */}
-      <section className="rounded-lg border bg-card p-4">
-        <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4">Pass / Fail Trend</h2>
-        <div className="h-32 sm:h-40">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={statusTrendData} barSize={20}>
-              <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
-              <XAxis dataKey="date" tick={tickStyle} />
-              <YAxis tick={tickStyle} domain={[0, 1]} ticks={[0, 1]} tickFormatter={(v) => v === 1 ? "✓" : "✗"} />
-              <Tooltip
-                contentStyle={chartTooltipStyle}
-                formatter={(_v: number, name: string) => {
-                  if (name === "passed") return ["Passed", "Status"];
-                  if (name === "failed") return ["Failed", "Status"];
-                  return ["Skipped", "Status"];
-                }}
-                labelFormatter={(label) => `Run: ${label}`}
-              />
-              <Bar dataKey="passed" stackId="status" fill="hsl(var(--success))" radius={[0, 0, 0, 0]} />
-              <Bar dataKey="failed" stackId="status" fill="hsl(var(--destructive))" radius={[0, 0, 0, 0]} />
-              <Bar dataKey="skipped" stackId="status" fill="hsl(var(--skipped))" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+      {/* Pass/Fail Timeline */}
+      <section className="rounded-lg border bg-card px-4 py-3">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Status Timeline</h2>
+          <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-success inline-block" /> Pass</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-destructive inline-block" /> Fail</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-skipped inline-block" /> Skip</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-1 flex-wrap">
+          {statusTrendData.map((d, i) => {
+            const color = d.status === "passed" ? "bg-success" : d.status === "failed" ? "bg-destructive" : "bg-skipped";
+            return (
+              <div key={i} className="group relative">
+                <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded ${color} transition-transform hover:scale-125 cursor-default`} />
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 rounded bg-popover border shadow-md text-[10px] font-mono text-popover-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-10 transition-opacity">
+                  {d.date} · {d.status}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
