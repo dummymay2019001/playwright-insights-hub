@@ -8,6 +8,7 @@ import { TestRow } from "@/components/TestRow";
 import { TagSummary } from "@/components/TagSummary";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ExportDialog } from "@/components/ExportDialog";
 import { TestStatus } from "@/models/types";
 
 const STATUS_FILTERS: { label: string; value: TestStatus | "all" }[] = [
@@ -81,9 +82,12 @@ const RunDetailPage = () => {
             <Badge variant="outline" className="font-mono text-[10px] sm:text-xs">{m.environment}</Badge>
           </div>
         </div>
-        <span className={`font-mono text-xl sm:text-2xl font-bold ${rate >= 95 ? "text-success" : rate >= 80 ? "text-warning" : "text-destructive"}`}>
-          {rate}%
-        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <ExportDialog run={run} />
+          <span className={`font-mono text-xl sm:text-2xl font-bold ${rate >= 95 ? "text-success" : rate >= 80 ? "text-warning" : "text-destructive"}`}>
+            {rate}%
+          </span>
+        </div>
       </div>
 
       {/* Stats + Pie */}
