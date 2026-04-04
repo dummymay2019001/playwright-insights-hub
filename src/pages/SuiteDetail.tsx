@@ -253,40 +253,7 @@ const SuiteDetailPage = () => {
       )}
 
       {/* Tests in this suite */}
-      <section>
-        <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-          Tests in Suite ({testAggregates.length})
-        </h2>
-        <div className="space-y-1.5">
-          {testAggregates.map((t) => (
-            <button
-              key={t.name}
-              onClick={() => navigate(`/test/${encodeURIComponent(t.name)}`)}
-              className="w-full text-left rounded-xl border bg-card hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
-            >
-              <div className="px-4 py-3 flex items-center gap-3">
-                <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${t.passRate >= 95 ? "bg-success" : t.passRate >= 80 ? "bg-warning" : "bg-destructive"}`} />
-                <div className="flex-1 min-w-0">
-                  <p className="font-mono text-xs sm:text-sm text-foreground truncate">{t.name}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] text-muted-foreground">{t.totalRuns} runs</span>
-                    <span className="text-[10px] text-success">{t.passed}✓</span>
-                    {t.failed > 0 && <span className="text-[10px] text-destructive">{t.failed}✗</span>}
-                    {t.totalRetries > 0 && <span className="text-[10px] text-warning">⚡{t.totalRetries}r</span>}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <span className="font-mono text-[10px] text-muted-foreground">{t.avgDuration}ms avg</span>
-                  <span className={`font-mono text-sm font-bold ${t.passRate >= 95 ? "text-success" : t.passRate >= 80 ? "text-warning" : "text-destructive"}`}>
-                    {t.passRate}%
-                  </span>
-                </div>
-              </div>
-              <Progress value={t.passRate} className="h-0.5" />
-            </button>
-          ))}
-        </div>
-      </section>
+      <SuiteTestList tests={testAggregates} navigate={navigate} />
 
       {/* Run history */}
       <section>
