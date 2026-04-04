@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 
 const DashboardPage = () => {
   const { runs, loading } = useRuns();
+  const navigate = useNavigate();
 
   if (loading) {
     return (
