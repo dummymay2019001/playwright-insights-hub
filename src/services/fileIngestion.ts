@@ -78,6 +78,16 @@ function parseJsonContent(content: string, fileName: string): { runs: TestRun[];
     return { runs: [], error: `Invalid JSON in ${fileName}` };
   }
 
+  // Case 0: Playwright native JSON reporter output { config, suites, stats }
+  if (isPlaywrightNativeReport(parsed)) {
+    try {
+      const run = parsePlaywrightNativeReport(parsed, fileName);
+      return { runs: run.results.length > 0 ? [run] : [], error: run.results.length === 0 ? `No test results found in Playwright report ${fileName}` : undefined };
+    } catch (e) {
+      return { runs: [], error: `Failed to parse Playwright native report: ${(e as Error).message}` };
+    }
+  }
+
   // Case 1: Single TestRun { manifest, results }
   if (isValidRun(parsed)) {
     return { runs: [parsed as TestRun] };
