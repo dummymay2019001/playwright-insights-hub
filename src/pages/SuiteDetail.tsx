@@ -286,4 +286,52 @@ const SuiteDetailPage = () => {
   );
 };
 
+function SuiteTestList({ tests, navigate }: { tests: any[]; navigate: (path: string) => void }) {
+  const searchKey = useCallback((t: any) => t.name, []);
+  const { search, setSearch, page, setPage, totalPages, paginated, totalFiltered } = useSearchPagination({ items: tests, searchKey });
+
+  return (
+    <section>
+      <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Tests in Suite</h2>
+      <SearchPaginationBar
+        search={search} onSearchChange={setSearch}
+        page={page} totalPages={totalPages} onPageChange={setPage}
+        totalFiltered={totalFiltered} totalItems={tests.length}
+      />
+      <div className="space-y-1.5 mt-2">
+        {paginated.map((t: any) => (
+          <button
+            key={t.name}
+            onClick={() => navigate(`/test/${encodeURIComponent(t.name)}`)}
+            className="w-full text-left rounded-xl border bg-card hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
+          >
+            <div className="px-4 py-3 flex items-center gap-3">
+              <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${t.passRate >= 95 ? "bg-success" : t.passRate >= 80 ? "bg-warning" : "bg-destructive"}`} />
+              <div className="flex-1 min-w-0">
+                <p className="font-mono text-xs sm:text-sm text-foreground truncate">{t.name}</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-[10px] text-muted-foreground">{t.totalRuns} runs</span>
+                  <span className="text-[10px] text-success">{t.passed}✓</span>
+                  {t.failed > 0 && <span className="text-[10px] text-destructive">{t.failed}✗</span>}
+                  {t.totalRetries > 0 && <span className="text-[10px] text-warning">⚡{t.totalRetries}r</span>}
+                </div>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="font-mono text-[10px] text-muted-foreground">{t.avgDuration}ms avg</span>
+                <span className={`font-mono text-sm font-bold ${t.passRate >= 95 ? "text-success" : t.passRate >= 80 ? "text-warning" : "text-destructive"}`}>
+                  {t.passRate}%
+                </span>
+              </div>
+            </div>
+            <Progress value={t.passRate} className="h-0.5" />
+          </button>
+        ))}
+        {totalFiltered === 0 && (
+          <p className="text-sm text-muted-foreground font-mono py-8 text-center">No tests match this search</p>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export default SuiteDetailPage;
