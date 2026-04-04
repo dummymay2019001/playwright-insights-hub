@@ -6,6 +6,8 @@ import { HealthGauge } from "@/components/HealthGauge";
 import { InsightSection } from "@/components/InsightSection";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Badge } from "@/components/ui/badge";
+import { DurationDistribution } from "@/components/DurationDistribution";
+import { StatusCodeInsights } from "@/components/StatusCodeInsights";
 
 const InsightsPage = () => {
   const { runs, loading } = useRuns();
