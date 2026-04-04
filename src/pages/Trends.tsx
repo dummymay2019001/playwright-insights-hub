@@ -33,6 +33,8 @@ const TrendsPage = () => {
       passRate: passRate(r.manifest),
       failures: r.manifest.failed,
       duration: r.manifest.duration,
+      tests: r.manifest.total,
+      suites: new Set(r.results.map((t) => t.suite)).size,
     })),
     [sorted]
   );

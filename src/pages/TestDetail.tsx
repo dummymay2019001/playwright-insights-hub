@@ -97,7 +97,10 @@ const TestDetailPage = () => {
         <div className="flex-1 min-w-0">
           <h2 className="font-mono text-sm sm:text-base font-semibold text-foreground break-words">{decodedName}</h2>
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-            <span className="text-xs text-muted-foreground">Seen in {stats?.total} runs</span>
+            <span className="text-xs text-muted-foreground">
+              {stats?.total} of {runs.length} runs
+              {history.length > 0 && ` · First seen ${new Date(history[0].run.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
+            </span>
             <StatusBadge status={latestResult.test.status} />
             {isFlaky && (
               <Badge variant="outline" className="font-mono text-[10px] bg-warning/10 text-warning border-warning/30">⚡ Flaky</Badge>

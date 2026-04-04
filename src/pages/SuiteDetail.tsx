@@ -160,7 +160,8 @@ const SuiteDetailPage = () => {
                 <Badge variant="outline" className="font-mono text-[10px]">{latestRun.tests[0]?.file}</Badge>
               </div>
               <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                Seen in {stats?.runsCount} runs · {latestRun.total} tests per run
+                Present in {stats?.runsCount} of {runs.length} runs · {latestRun.total} tests in latest
+                {history.length > 0 && ` · First seen ${new Date(history[0].run.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
               </p>
               <div className="flex items-center gap-2 mt-2 flex-wrap">
                 <StatusBadge status={latestRun.failed > 0 ? "failed" : "passed"} />
