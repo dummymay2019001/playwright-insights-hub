@@ -22,6 +22,16 @@ const RunDetailPage = () => {
   const { getRunById, loading } = useRuns();
   const [filter, setFilter] = useState<TestStatus | "all">("all");
 
+  const run = runId ? getRunById(decodeURIComponent(runId)) : undefined;
+
+  const filtered = useMemo(
+    () => {
+      if (!run) return [];
+      return filter === "all" ? run.results : run.results.filter((t) => t.status === filter);
+    },
+    [run, filter]
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -29,8 +39,6 @@ const RunDetailPage = () => {
       </div>
     );
   }
-
-  const run = runId ? getRunById(decodeURIComponent(runId)) : undefined;
 
   if (!run) {
     return (
@@ -43,11 +51,6 @@ const RunDetailPage = () => {
 
   const m = run.manifest;
   const rate = passRate(m);
-
-  const filtered = useMemo(
-    () => (filter === "all" ? run.results : run.results.filter((t) => t.status === filter)),
-    [run.results, filter]
-  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -71,7 +74,6 @@ const RunDetailPage = () => {
       </header>
 
       <main className="container py-6 space-y-6">
-        {/* Stats + Pie Chart */}
         <div className="grid grid-cols-1 md:grid-cols-[1fr_280px] gap-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             <StatCard label="Total" value={m.total} />
@@ -83,7 +85,6 @@ const RunDetailPage = () => {
           <StatusPieChart passed={m.passed} failed={m.failed} skipped={m.skipped} />
         </div>
 
-        {/* Filters + Test List */}
         <section>
           <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
             <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
