@@ -82,7 +82,9 @@ const RunDetailPage = () => {
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <ExportDialog run={run} />
+          <Button variant="outline" size="sm" className="font-mono text-xs" onClick={() => navigate(`/export/${encodeURIComponent(m.runId)}`)}>
+            📄 Export PDF
+          </Button>
           <span className={`font-mono text-xl sm:text-2xl font-bold ${rate >= 95 ? "text-success" : rate >= 80 ? "text-warning" : "text-destructive"}`}>
             {rate}%
           </span>
