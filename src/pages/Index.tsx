@@ -188,7 +188,7 @@ const DashboardPage = () => {
         </div>
         <div className="space-y-2">
           {sortedRuns.map((run) => (
-            <RunRow key={run.manifest.runId} manifest={run.manifest} />
+            <RunRow key={run.manifest.runId} manifest={run.manifest} onRemove={dataMode === "imported" ? removeRun : undefined} />
           ))}
         </div>
       </section>
