@@ -1,5 +1,17 @@
 export type TestStatus = "passed" | "failed" | "skipped";
 
+export type Severity = "blocker" | "critical" | "normal" | "minor" | "trivial";
+
+export type DefectCategory = "product" | "test" | "infrastructure" | "unknown";
+
+export interface TestStep {
+  name: string;
+  status: TestStatus;
+  duration: number; // ms
+  error?: string;
+  steps?: TestStep[]; // nested steps
+}
+
 export interface RunManifest {
   runId: string;
   timestamp: string;
@@ -35,6 +47,9 @@ export interface TestResult {
   error?: string;
   logs?: string[];
   apiPayload?: ApiPayload;
+  severity?: Severity;
+  defectCategory?: DefectCategory;
+  steps?: TestStep[];
 }
 
 export interface TestRun {

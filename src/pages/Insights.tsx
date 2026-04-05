@@ -6,12 +6,44 @@ import { HealthGauge } from "@/components/HealthGauge";
 import { InsightSection } from "@/components/InsightSection";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Badge } from "@/components/ui/badge";
+import { DEFECT_CATEGORY_META, SEVERITY_META } from "@/services/defectClassifier";
+import { DefectCategory, Severity } from "@/models/types";
 
 const InsightsPage = () => {
   const { runs, loading } = useRuns();
   const navigate = useNavigate();
 
   const insights = useMemo(() => computeInsights(runs), [runs]);
+
+  // Aggregate defect categories from latest run
+  const defectBreakdown = useMemo(() => {
+    const latest = [...runs].sort((a, b) => new Date(b.manifest.timestamp).getTime() - new Date(a.manifest.timestamp).getTime())[0];
+    if (!latest) return [];
+    const catMap = new Map<DefectCategory, number>();
+    for (const t of latest.results) {
+      if (t.status === "failed" && t.defectCategory) {
+        catMap.set(t.defectCategory, (catMap.get(t.defectCategory) || 0) + 1);
+      }
+    }
+    return [...catMap.entries()].map(([cat, count]) => ({ cat, count, meta: DEFECT_CATEGORY_META[cat] })).sort((a, b) => b.count - a.count);
+  }, [runs]);
+
+  // Severity distribution from latest run
+  const severityBreakdown = useMemo(() => {
+    const latest = [...runs].sort((a, b) => new Date(b.manifest.timestamp).getTime() - new Date(a.manifest.timestamp).getTime())[0];
+    if (!latest) return [];
+    const sevMap = new Map<Severity, { total: number; failed: number }>();
+    for (const t of latest.results) {
+      const sev = t.severity || "normal";
+      const entry = sevMap.get(sev) || { total: 0, failed: 0 };
+      entry.total++;
+      if (t.status === "failed") entry.failed++;
+      sevMap.set(sev, entry);
+    }
+    return [...sevMap.entries()]
+      .map(([sev, data]) => ({ sev, ...data, meta: SEVERITY_META[sev] }))
+      .sort((a, b) => a.meta.priority - b.meta.priority);
+  }, [runs]);
 
   if (loading) {
     return (
@@ -56,6 +88,53 @@ const InsightsPage = () => {
           <HealthGauge score={healthScore.speed} label="Speed" />
         </div>
       </section>
+
+      {/* Defect Categories & Severity */}
+      {(defectBreakdown.length > 0 || severityBreakdown.length > 0) && (
+        <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {defectBreakdown.length > 0 && (
+            <div className="rounded-lg border bg-card p-4 space-y-3">
+              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Defect Categories</h3>
+              <div className="flex h-3 rounded-full overflow-hidden bg-muted">
+                {defectBreakdown.map(d => (
+                  <div
+                    key={d.cat}
+                    className="h-full"
+                    style={{ width: `${(d.count / defectBreakdown.reduce((s, x) => s + x.count, 0)) * 100}%`, backgroundColor: d.meta.color }}
+                    title={`${d.meta.label}: ${d.count}`}
+                  />
+                ))}
+              </div>
+              <div className="space-y-1.5">
+                {defectBreakdown.map(d => (
+                  <div key={d.cat} className="flex items-center gap-2">
+                    <span className="text-sm">{d.meta.icon}</span>
+                    <span className="font-mono text-xs text-foreground flex-1">{d.meta.label}</span>
+                    <span className="font-mono text-xs font-bold text-muted-foreground">{d.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {severityBreakdown.length > 0 && (
+            <div className="rounded-lg border bg-card p-4 space-y-3">
+              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Severity Distribution</h3>
+              <div className="space-y-1.5">
+                {severityBreakdown.map(s => (
+                  <div key={s.sev} className="flex items-center gap-2">
+                    <span className="text-sm">{s.meta.icon}</span>
+                    <span className="font-mono text-xs text-foreground flex-1">{s.meta.label}</span>
+                    <span className="font-mono text-xs text-muted-foreground">{s.total} tests</span>
+                    {s.failed > 0 && (
+                      <span className="font-mono text-[10px] text-destructive font-bold">{s.failed} failed</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Insights Sections */}
       <section className="space-y-3">

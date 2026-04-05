@@ -1,4 +1,10 @@
 import { Badge } from "@/components/ui/badge";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 const CodeBlock = ({ children, title }: { children: string; title?: string }) => (
   <div className="rounded-lg border bg-muted/50 overflow-hidden">
@@ -7,14 +13,15 @@ const CodeBlock = ({ children, title }: { children: string; title?: string }) =>
   </div>
 );
 
-const Section = ({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) => (
-  <section className="rounded-lg border bg-card p-4 sm:p-6 space-y-4">
-    <h2 className="font-mono text-sm sm:text-base font-semibold text-foreground flex items-center gap-2">
-      <span>{icon}</span> {title}
-    </h2>
-    {children}
-  </section>
-);
+const Tip = ({ icon = "💡", variant = "primary", children }: { icon?: string; variant?: "primary" | "warning" | "success"; children: React.ReactNode }) => {
+  const bg = variant === "warning" ? "bg-warning/10 border-warning/30" : variant === "success" ? "bg-success/10 border-success/30" : "bg-primary/5 border-primary/20";
+  return (
+    <div className={`flex items-start gap-2 p-3 rounded-md ${bg}`}>
+      <span className="text-sm">{icon}</span>
+      <p className="text-xs text-muted-foreground">{children}</p>
+    </div>
+  );
+};
 
 const HelpPage = () => {
   return (
@@ -26,13 +33,39 @@ const HelpPage = () => {
         </p>
       </div>
 
-      {/* Suites */}
-      <Section title="Structuring Test Suites" icon="📂">
-        <p className="text-sm text-muted-foreground">
-          Each <code className="font-mono text-xs bg-muted px-1 py-0.5 rounded">describe()</code> block maps to a suite. 
-          Use clear, consistent suite names — they power the Suite Breakdown view on each run.
-        </p>
-        <CodeBlock title="tests/auth.spec.ts">{`import { test, expect } from '@playwright/test';
+      <Accordion type="multiple" defaultValue={["getting-started"]} className="space-y-2">
+        {/* Getting Started */}
+        <AccordionItem value="getting-started" className="rounded-lg border bg-card px-4 sm:px-6">
+          <AccordionTrigger className="font-mono text-sm sm:text-base font-semibold text-foreground hover:no-underline py-4">
+            <span className="flex items-center gap-2"><span>🚀</span> Getting Started</span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-4 pb-4">
+            <p className="text-sm text-muted-foreground">
+              The fastest way to get started is using Playwright's built-in JSON reporter. No custom reporter needed!
+            </p>
+            <CodeBlock title="Run tests with JSON output">{`npx playwright test --reporter=json > results.json
+
+# Or configure in playwright.config.ts:
+export default defineConfig({
+  reporter: [['json', { outputFile: 'results.json' }]],
+});`}</CodeBlock>
+            <Tip variant="success" icon="✅">
+              <strong className="text-foreground">Just import the file!</strong> Drop <code className="font-mono bg-muted px-1 rounded">results.json</code> onto the dashboard. Native Playwright format is auto-detected.
+            </Tip>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Suites */}
+        <AccordionItem value="suites" className="rounded-lg border bg-card px-4 sm:px-6">
+          <AccordionTrigger className="font-mono text-sm sm:text-base font-semibold text-foreground hover:no-underline py-4">
+            <span className="flex items-center gap-2"><span>📂</span> Structuring Test Suites</span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-4 pb-4">
+            <p className="text-sm text-muted-foreground">
+              Each <code className="font-mono text-xs bg-muted px-1 py-0.5 rounded">describe()</code> block maps to a suite. 
+              Use clear, consistent suite names — they power the Suite Breakdown and Suite Detail views.
+            </p>
+            <CodeBlock title="tests/auth.spec.ts">{`import { test, expect } from '@playwright/test';
 
 test.describe('auth', () => {
   test('login with valid credentials', async ({ page }) => {
@@ -50,30 +83,24 @@ test.describe('auth', () => {
     await page.click('button[type="submit"]');
     await expect(page.locator('.error')).toBeVisible();
   });
-
-  test('signup flow', async ({ page }) => {
-    await page.goto('/signup');
-    // ... signup steps
-  });
 });`}</CodeBlock>
-        <div className="flex items-start gap-2 p-3 rounded-md bg-primary/5 border border-primary/20">
-          <span className="text-sm">💡</span>
-          <p className="text-xs text-muted-foreground">
-            <strong className="text-foreground">Best practice:</strong> Keep suite names lowercase and descriptive. 
-            Use one file per suite for clean file-based grouping (e.g. <code className="font-mono bg-muted px-1 rounded">tests/auth.spec.ts</code>).
-          </p>
-        </div>
-      </Section>
+            <Tip>
+              <strong className="text-foreground">Best practice:</strong> Keep suite names lowercase and descriptive. 
+              Use one file per suite for clean file-based grouping.
+            </Tip>
+          </AccordionContent>
+        </AccordionItem>
 
-      {/* Tags */}
-      <Section title="Using Tags for Filtering" icon="🏷️">
-        <p className="text-sm text-muted-foreground">
-          Tags let you categorize tests by priority, type, or feature. Use Playwright's <code className="font-mono text-xs bg-muted px-1 py-0.5 rounded">tag</code> annotation 
-          to add tags that appear in our Tag Summary and filters.
-        </p>
-        <CodeBlock title="tests/checkout.spec.ts">{`import { test, expect } from '@playwright/test';
-
-// Tag individual tests
+        {/* Tags */}
+        <AccordionItem value="tags" className="rounded-lg border bg-card px-4 sm:px-6">
+          <AccordionTrigger className="font-mono text-sm sm:text-base font-semibold text-foreground hover:no-underline py-4">
+            <span className="flex items-center gap-2"><span>🏷️</span> Using Tags for Filtering</span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-4 pb-4">
+            <p className="text-sm text-muted-foreground">
+              Tags categorize tests by priority, type, or feature. They power filtering and the Tag Summary view.
+            </p>
+            <CodeBlock title="tests/checkout.spec.ts">{`// Tag individual tests
 test('add to cart', { tag: ['@smoke', '@critical'] }, async ({ page }) => {
   await page.goto('/products');
   await page.click('.add-to-cart');
@@ -83,206 +110,337 @@ test('add to cart', { tag: ['@smoke', '@critical'] }, async ({ page }) => {
 // Tag an entire suite
 test.describe('payment', { tag: '@regression' }, () => {
   test('payment success', async ({ page }) => {
-    // This test inherits @regression
+    // Inherits @regression
   });
-
   test('payment failure', { tag: '@critical' }, async ({ page }) => {
-    // This test has both @regression and @critical
+    // Has both @regression and @critical
   });
 });`}</CodeBlock>
-
-        <div className="space-y-2">
-          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Recommended Tags</h3>
-          <div className="flex flex-wrap gap-2">
-            {[
-              { tag: "@smoke", desc: "Quick sanity checks" },
-              { tag: "@critical", desc: "Must-pass tests" },
-              { tag: "@regression", desc: "Full regression suite" },
-              { tag: "@ui", desc: "Visual / UI tests" },
-              { tag: "@api", desc: "API endpoint tests" },
-              { tag: "@payment", desc: "Payment flow tests" },
-              { tag: "@flaky", desc: "Known flaky tests" },
-            ].map(({ tag, desc }) => (
-              <div key={tag} className="flex items-center gap-1.5 px-2 py-1 rounded-md border bg-muted/50">
-                <Badge variant="outline" className="font-mono text-[10px]">{tag}</Badge>
-                <span className="text-[10px] text-muted-foreground">{desc}</span>
+            <div className="space-y-2">
+              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Recommended Tags</h3>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { tag: "@smoke", desc: "Quick sanity checks" },
+                  { tag: "@critical", desc: "Must-pass tests" },
+                  { tag: "@regression", desc: "Full regression suite" },
+                  { tag: "@ui", desc: "Visual / UI tests" },
+                  { tag: "@api", desc: "API endpoint tests" },
+                  { tag: "@flaky", desc: "Known flaky tests" },
+                ].map(({ tag, desc }) => (
+                  <div key={tag} className="flex items-center gap-1.5 px-2 py-1 rounded-md border bg-muted/50">
+                    <Badge variant="outline" className="font-mono text-[10px]">{tag}</Badge>
+                    <span className="text-[10px] text-muted-foreground">{desc}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      </Section>
-
-      {/* Console Logs */}
-      <Section title="Console Logs & Error Rendering" icon="📝">
-        <p className="text-sm text-muted-foreground">
-          Logs captured during test execution are rendered in the expandable test row. Structure your logs with prefixes for clean rendering.
-        </p>
-        <CodeBlock title="Using structured log prefixes">{`import { test, expect } from '@playwright/test';
-
-test('checkout flow', async ({ page }) => {
-  // These console logs are captured and rendered in the dashboard
-  console.log('[INFO] Starting checkout flow');
-  console.log('[INFO] Adding product to cart');
-
-  await page.goto('/checkout');
-
-  // Errors are highlighted in red
-  console.log('[ERROR] Payment gateway timeout');
-
-  // Warnings get special treatment
-  console.log('[WARN] Retrying payment attempt 2/3');
-
-  // Debug info for detailed investigation
-  console.log('[DEBUG] Cart state: {items: 3, total: 49.99}');
-});`}</CodeBlock>
-
-        <div className="space-y-2">
-          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Log Level Rendering</h3>
-          <div className="rounded-lg border overflow-hidden">
-            <div className="px-4 py-2 bg-muted border-b text-xs font-mono text-muted-foreground">Preview</div>
-            <div className="p-3 space-y-1 bg-muted/20 font-mono text-xs">
-              <p className="text-muted-foreground">[INFO] Starting checkout flow</p>
-              <p className="text-muted-foreground">[INFO] Adding product to cart</p>
-              <p className="text-destructive font-medium">[ERROR] Payment gateway timeout</p>
-              <p className="text-warning">[WARN] Retrying payment attempt 2/3</p>
-              <p className="text-muted-foreground/60">[DEBUG] Cart state: {"{ items: 3, total: 49.99 }"}</p>
             </div>
-          </div>
-        </div>
+          </AccordionContent>
+        </AccordionItem>
 
-        <div className="flex items-start gap-2 p-3 rounded-md bg-primary/5 border border-primary/20">
-          <span className="text-sm">💡</span>
-          <p className="text-xs text-muted-foreground">
-            <strong className="text-foreground">Tip:</strong> Use <code className="font-mono bg-muted px-1 rounded">[ERROR]</code> prefix 
-            to make errors visually stand out. The dashboard highlights any log line containing "ERROR" in red.
-          </p>
-        </div>
-      </Section>
+        {/* Severity Levels */}
+        <AccordionItem value="severity" className="rounded-lg border bg-card px-4 sm:px-6">
+          <AccordionTrigger className="font-mono text-sm sm:text-base font-semibold text-foreground hover:no-underline py-4">
+            <span className="flex items-center gap-2"><span>🎯</span> Severity Levels</span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-4 pb-4">
+            <p className="text-sm text-muted-foreground">
+              Severity levels help prioritize which failures to fix first. The dashboard supports 5 levels, auto-inferred from tags and error types.
+            </p>
 
-      {/* Error Messages */}
-      <Section title="Error Messages & Stack Traces" icon="🔴">
-        <p className="text-sm text-muted-foreground">
-          When tests fail, Playwright captures assertion errors and stack traces. These render in the expandable test detail with syntax highlighting.
-        </p>
-        <CodeBlock title="Clean assertion messages">{`// ✅ Good — clear and descriptive
-await expect(page.locator('.cart-count'))
-  .toHaveText('3', { message: 'Cart should show 3 items after adding' });
+            <div className="rounded-lg border overflow-hidden">
+              <table className="w-full text-xs font-mono">
+                <thead>
+                  <tr className="bg-muted">
+                    <th className="text-left px-3 py-2 text-muted-foreground font-medium">Level</th>
+                    <th className="text-left px-3 py-2 text-muted-foreground font-medium">Icon</th>
+                    <th className="text-left px-3 py-2 text-muted-foreground font-medium">When to Use</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {[
+                    ["Blocker", "🔴", "Blocks release — critical path completely broken"],
+                    ["Critical", "🟠", "Major feature broken — must fix before release"],
+                    ["Normal", "🟡", "Standard priority — typical assertion failures"],
+                    ["Minor", "🔵", "Low impact — cosmetic issues, edge cases"],
+                    ["Trivial", "⚪", "Minimal impact — nice-to-fix items"],
+                  ].map(([level, icon, desc]) => (
+                    <tr key={level} className="hover:bg-muted/30">
+                      <td className="px-3 py-2 text-foreground font-semibold">{level}</td>
+                      <td className="px-3 py-2">{icon}</td>
+                      <td className="px-3 py-2 text-muted-foreground font-sans">{desc}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-// ✅ Good — custom error context
-test('user can checkout', async ({ page }) => {
-  const cartTotal = await page.locator('.total').textContent();
-  expect(Number(cartTotal)).toBeGreaterThan(0);
-  // Error: "expect(received).toBeGreaterThan(expected)
-  //   Expected: > 0
-  //   Received: 0"
+            <CodeBlock title="Setting severity via tags">{`// Explicit severity tags (highest priority)
+test('login flow', { tag: ['@critical'] }, async ({ page }) => { ... });
+test('footer link', { tag: ['@trivial'] }, async ({ page }) => { ... });
+
+// Playwright annotations (also supported)
+test('checkout', async ({ page }) => {
+  test.info().annotations.push({ type: 'severity', description: 'blocker' });
+  // ...
 });
 
-// ❌ Avoid — generic assertions without context
-await expect(true).toBe(false); // unhelpful error`}</CodeBlock>
-      </Section>
+// Auto-inference: @smoke/@p0 → critical, @regression/@p1 → normal
+// Timeouts/network errors → critical, assertions → normal, script errors → minor`}</CodeBlock>
+          </AccordionContent>
+        </AccordionItem>
 
-      {/* API Payloads */}
-      <Section title="API Request & Response Payloads" icon="🔗">
-        <p className="text-sm text-muted-foreground">
-          For API tests, the dashboard can render request/response payloads inline. Attach an <code className="font-mono text-xs bg-muted px-1 py-0.5 rounded">apiPayload</code> object 
-          to your test result to get collapsible headers, body, status code, and latency displayed neatly.
-        </p>
-        <CodeBlock title="Attaching API payloads in your test reporter">{`// In your custom Playwright reporter, attach payload data:
-// reporter.ts
+        {/* Defect Categories */}
+        <AccordionItem value="defect-categories" className="rounded-lg border bg-card px-4 sm:px-6">
+          <AccordionTrigger className="font-mono text-sm sm:text-base font-semibold text-foreground hover:no-underline py-4">
+            <span className="flex items-center gap-2"><span>🐛</span> Defect Categories</span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-4 pb-4">
+            <p className="text-sm text-muted-foreground">
+              Failed tests are automatically classified into defect categories to help you understand <em>why</em> tests fail — not just <em>that</em> they fail.
+            </p>
 
-import { Reporter, TestCase, TestResult } from '@playwright/test/reporter';
+            <div className="rounded-lg border overflow-hidden">
+              <table className="w-full text-xs font-mono">
+                <thead>
+                  <tr className="bg-muted">
+                    <th className="text-left px-3 py-2 text-muted-foreground font-medium">Category</th>
+                    <th className="text-left px-3 py-2 text-muted-foreground font-medium">Meaning</th>
+                    <th className="text-left px-3 py-2 text-muted-foreground font-medium">Example Errors</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {[
+                    ["🐛 Product Defect", "Actual application bugs", "AssertionError, expected X but got Y"],
+                    ["🔧 Test Defect", "Test code issues", "TypeError, ReferenceError, element not found"],
+                    ["🏗️ Infrastructure", "Environment problems", "TimeoutError, net::ERR, 502 Bad Gateway"],
+                    ["❓ Unclassified", "Needs manual review", "Generic errors without clear patterns"],
+                  ].map(([cat, meaning, example]) => (
+                    <tr key={cat} className="hover:bg-muted/30">
+                      <td className="px-3 py-2 text-foreground font-sans">{cat}</td>
+                      <td className="px-3 py-2 text-muted-foreground font-sans">{meaning}</td>
+                      <td className="px-3 py-2 text-muted-foreground truncate max-w-[200px]">{example}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-class DashboardReporter implements Reporter {
-  onTestEnd(test: TestCase, result: TestResult) {
-    // Extract API call data from attachments or test info
-    const apiData = result.attachments.find(a => a.name === 'api-payload');
-    
-    return {
-      ...baseResult,
-      apiPayload: apiData ? JSON.parse(apiData.body.toString()) : undefined,
-    };
-  }
-}`}</CodeBlock>
+            <Tip>
+              <strong className="text-foreground">Auto-classification:</strong> The dashboard analyzes error messages using pattern matching.
+              Use Playwright's built-in assertions for best auto-classification. Avoid generic <code className="font-mono bg-muted px-1 rounded">throw new Error('fail')</code>.
+            </Tip>
 
-        <CodeBlock title="Capturing API calls in your test">{`import { test, expect } from '@playwright/test';
+            <CodeBlock title="Writing classifiable errors">{`// ✅ Product defect — assertion failure
+await expect(page.locator('.price')).toHaveText('$49.99');
+// → "AssertionError: expected '$0.00' to equal '$49.99'" → Product Defect
 
-test('POST /orders', { tag: ['@api'] }, async ({ request }) => {
-  const payload = { productId: 'sku-123', quantity: 2, coupon: 'SAVE10' };
-  
+// ✅ Test defect — caught as script error  
+const title = await page.locator('.missing').textContent();
+// → "TypeError: Cannot read properties of null" → Test Defect
+
+// ✅ Infrastructure — caught as timeout
+await page.locator('.slow-btn').click({ timeout: 5000 });
+// → "TimeoutError: Timeout 5000ms exceeded" → Infrastructure`}</CodeBlock>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Test Steps */}
+        <AccordionItem value="test-steps" className="rounded-lg border bg-card px-4 sm:px-6">
+          <AccordionTrigger className="font-mono text-sm sm:text-base font-semibold text-foreground hover:no-underline py-4">
+            <span className="flex items-center gap-2"><span>📝</span> Test Steps</span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-4 pb-4">
+            <p className="text-sm text-muted-foreground">
+              Test steps provide a step-by-step breakdown of test execution, showing exactly where a test failed. 
+              Playwright captures steps automatically from its API calls, or you can add custom steps.
+            </p>
+
+            <CodeBlock title="Using Playwright's test.step() for detailed breakdown">{`import { test, expect } from '@playwright/test';
+
+test('complete checkout flow', async ({ page }) => {
+  await test.step('Navigate to products', async () => {
+    await page.goto('/products');
+    await expect(page.locator('.product-grid')).toBeVisible();
+  });
+
+  await test.step('Add item to cart', async () => {
+    await page.click('.product-card:first-child .add-btn');
+    await expect(page.locator('.cart-badge')).toHaveText('1');
+  });
+
+  await test.step('Open checkout', async () => {
+    await page.click('.cart-icon');
+    await page.click('.checkout-btn');
+    await expect(page).toHaveURL('/checkout');
+  });
+
+  await test.step('Fill payment details', async () => {
+    await page.fill('#card-number', '4242424242424242');
+    await page.fill('#expiry', '12/28');
+    await page.fill('#cvc', '123');
+  });
+
+  await test.step('Complete purchase', async () => {
+    await page.click('#pay-btn');
+    await expect(page.locator('.success-message')).toBeVisible();
+  });
+});`}</CodeBlock>
+
+            <div className="rounded-lg border overflow-hidden">
+              <div className="px-4 py-2 bg-muted border-b text-xs font-mono text-muted-foreground">Step Rendering Preview</div>
+              <div className="p-3 space-y-0.5 bg-muted/20 font-mono text-[11px]">
+                <div className="flex items-center gap-2 py-0.5">
+                  <span className="text-success font-bold">✓</span>
+                  <span className="text-foreground flex-1">Navigate to products</span>
+                  <span className="text-muted-foreground">245ms</span>
+                </div>
+                <div className="flex items-center gap-2 py-0.5">
+                  <span className="text-success font-bold">✓</span>
+                  <span className="text-foreground flex-1">Add item to cart</span>
+                  <span className="text-muted-foreground">180ms</span>
+                </div>
+                <div className="flex items-center gap-2 py-0.5">
+                  <span className="text-success font-bold">✓</span>
+                  <span className="text-foreground flex-1">Open checkout</span>
+                  <span className="text-muted-foreground">320ms</span>
+                </div>
+                <div className="flex items-center gap-2 py-0.5">
+                  <span className="text-destructive font-bold">✗</span>
+                  <span className="text-foreground flex-1">Fill payment details</span>
+                  <span className="text-muted-foreground">50ms</span>
+                </div>
+                <div className="text-destructive/70 text-[10px] ml-4">Element not found: #card-number</div>
+              </div>
+            </div>
+
+            <Tip>
+              <strong className="text-foreground">Native support:</strong> When using Playwright's JSON reporter, steps from <code className="font-mono bg-muted px-1 rounded">test.step()</code> are automatically captured and rendered in the dashboard. No custom reporter needed.
+            </Tip>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Environment Comparison */}
+        <AccordionItem value="environments" className="rounded-lg border bg-card px-4 sm:px-6">
+          <AccordionTrigger className="font-mono text-sm sm:text-base font-semibold text-foreground hover:no-underline py-4">
+            <span className="flex items-center gap-2"><span>🌐</span> Environment Comparison</span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-4 pb-4">
+            <p className="text-sm text-muted-foreground">
+              The Environment Comparison view lets you compare test results across different environments (staging, production, etc.) to spot env-specific failures.
+            </p>
+
+            <CodeBlock title="Setting environment in your config">{`// playwright.config.ts
+export default defineConfig({
+  projects: [
+    {
+      name: 'staging',
+      use: { baseURL: 'https://staging.example.com' },
+    },
+    {
+      name: 'production', 
+      use: { baseURL: 'https://www.example.com' },
+    },
+  ],
+});
+
+// Or via environment variables in CI:
+// TEST_ENV=staging npx playwright test --reporter=json`}</CodeBlock>
+
+            <div className="space-y-2">
+              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">What You Get</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  { icon: "📊", title: "Per-env pass rates", desc: "See which environments are most stable" },
+                  { icon: "🔀", title: "Cross-env failures", desc: "Tests that pass in one env but fail in another" },
+                  { icon: "🐛", title: "Env-specific defects", desc: "Failures categorized by product/test/infrastructure" },
+                  { icon: "📈", title: "Trend per environment", desc: "Track stability improvements per environment" },
+                ].map(item => (
+                  <div key={item.title} className="flex items-start gap-2 p-3 rounded-md border bg-muted/30">
+                    <span>{item.icon}</span>
+                    <div>
+                      <p className="text-xs font-medium text-foreground">{item.title}</p>
+                      <p className="text-[10px] text-muted-foreground">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <Tip variant="success" icon="🔀">
+              <strong className="text-foreground">Pro tip:</strong> If the same test passes on staging but fails on production, it's likely an environment config issue — not a product bug. Use the Environment Comparison view to quickly identify these.
+            </Tip>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Console Logs */}
+        <AccordionItem value="logs" className="rounded-lg border bg-card px-4 sm:px-6">
+          <AccordionTrigger className="font-mono text-sm sm:text-base font-semibold text-foreground hover:no-underline py-4">
+            <span className="flex items-center gap-2"><span>📝</span> Console Logs & Error Rendering</span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-4 pb-4">
+            <p className="text-sm text-muted-foreground">
+              Logs captured during test execution are rendered with color-coding. Use prefixes for clean rendering.
+            </p>
+            <CodeBlock title="Structured log prefixes">{`test('checkout flow', async ({ page }) => {
+  console.log('[INFO] Starting checkout flow');
+  console.log('[WARN] Slow response detected (2500ms)');
+  console.log('[ERROR] Payment gateway timeout');
+  console.log('[DEBUG] Cart state: {items: 3, total: 49.99}');
+});`}</CodeBlock>
+            <div className="rounded-lg border overflow-hidden">
+              <div className="px-4 py-2 bg-muted border-b text-xs font-mono text-muted-foreground">Rendering Preview</div>
+              <div className="p-3 space-y-1 bg-muted/20 font-mono text-xs">
+                <p className="text-muted-foreground">[INFO] Starting checkout flow</p>
+                <p className="text-warning">[WARN] Slow response detected (2500ms)</p>
+                <p className="text-destructive font-medium">[ERROR] Payment gateway timeout</p>
+                <p className="text-muted-foreground/60">[DEBUG] Cart state: {"{ items: 3, total: 49.99 }"}</p>
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* API Payloads */}
+        <AccordionItem value="api" className="rounded-lg border bg-card px-4 sm:px-6">
+          <AccordionTrigger className="font-mono text-sm sm:text-base font-semibold text-foreground hover:no-underline py-4">
+            <span className="flex items-center gap-2"><span>🔗</span> API Request & Response Payloads</span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-4 pb-4">
+            <p className="text-sm text-muted-foreground">
+              API tests can display request/response payloads inline with collapsible headers and bodies.
+            </p>
+            <CodeBlock title="Capturing API calls">{`test('POST /orders', { tag: ['@api'] }, async ({ request }) => {
+  const payload = { productId: 'sku-123', quantity: 2 };
   const response = await request.post('/api/v1/orders', { data: payload });
   const body = await response.json();
 
-  // Attach for the dashboard to render
   test.info().attach('api-payload', {
     contentType: 'application/json',
     body: Buffer.from(JSON.stringify({
       method: 'POST',
       url: '/api/v1/orders',
       statusCode: response.status(),
-      requestHeaders: { 'Content-Type': 'application/json' },
       requestBody: payload,
-      responseHeaders: Object.fromEntries(response.headers()),
       responseBody: body,
-      latency: 230,  // measure with performance.now()
+      latency: 230,
     })),
   });
 
   expect(response.ok()).toBeTruthy();
-  expect(body.orderId).toBeDefined();
 });`}</CodeBlock>
+          </AccordionContent>
+        </AccordionItem>
 
-        <div className="space-y-2">
-          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">ApiPayload Schema</h3>
-          <div className="rounded-lg border overflow-hidden">
-            <table className="w-full text-xs font-mono">
-              <thead>
-                <tr className="bg-muted">
-                  <th className="text-left px-3 py-2 text-muted-foreground font-medium">Field</th>
-                  <th className="text-left px-3 py-2 text-muted-foreground font-medium">Type</th>
-                  <th className="text-left px-3 py-2 text-muted-foreground font-medium">Description</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {[
-                  ["method", "string", "'GET' | 'POST' | 'PUT' | 'DELETE'"],
-                  ["url", "string", "API endpoint path"],
-                  ["statusCode", "number", "HTTP status code"],
-                  ["requestHeaders", "Record", "Request header key-value pairs"],
-                  ["requestBody", "any", "Parsed request body (JSON)"],
-                  ["responseHeaders", "Record", "Response header key-value pairs"],
-                  ["responseBody", "any", "Parsed response body (JSON)"],
-                  ["latency", "number", "Response time in milliseconds"],
-                ].map(([field, type, desc]) => (
-                  <tr key={field} className="hover:bg-muted/30">
-                    <td className="px-3 py-2 text-foreground">{field}</td>
-                    <td className="px-3 py-2 text-muted-foreground">{type}</td>
-                    <td className="px-3 py-2 text-muted-foreground font-sans">{desc}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="flex items-start gap-2 p-3 rounded-md bg-primary/5 border border-primary/20">
-          <span className="text-sm">💡</span>
-          <p className="text-xs text-muted-foreground">
-            <strong className="text-foreground">Rendering:</strong> API tests show an <Badge variant="outline" className="font-mono text-[10px] bg-primary/10 text-primary border-primary/30 inline-flex">API</Badge> badge. 
-            Expand the test row to see method, URL, status code, latency, and collapsible request/response headers &amp; bodies — all formatted as JSON.
-          </p>
-        </div>
-      </Section>
-
-      <Section title="Retries & Flaky Test Detection" icon="⚡">
-        <p className="text-sm text-muted-foreground">
-          The dashboard automatically detects flaky tests — tests that fail initially but pass on retry. Configure retries in your Playwright config:
-        </p>
-        <CodeBlock title="playwright.config.ts">{`import { defineConfig } from '@playwright/test';
-
-export default defineConfig({
+        {/* Retries & Flaky */}
+        <AccordionItem value="retries" className="rounded-lg border bg-card px-4 sm:px-6">
+          <AccordionTrigger className="font-mono text-sm sm:text-base font-semibold text-foreground hover:no-underline py-4">
+            <span className="flex items-center gap-2"><span>⚡</span> Retries & Flaky Test Detection</span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-4 pb-4">
+            <p className="text-sm text-muted-foreground">
+              The dashboard automatically detects flaky tests — tests that fail initially but pass on retry.
+            </p>
+            <CodeBlock title="playwright.config.ts">{`export default defineConfig({
   retries: 2,  // Retry failed tests up to 2 times
-  
-  // Or set per-project
   projects: [
     {
       name: 'chromium',
@@ -290,155 +448,61 @@ export default defineConfig({
     },
   ],
 });`}</CodeBlock>
-        <div className="flex items-start gap-2 p-3 rounded-md bg-warning/10 border border-warning/30">
-          <span className="text-sm">⚡</span>
-          <p className="text-xs text-muted-foreground">
-            <strong className="text-foreground">Flaky detection:</strong> A test is marked flaky if it has retries &gt; 0 across 2 or more runs. 
-            The Insights panel surfaces the most flaky tests with recommendations to fix them.
-          </p>
-        </div>
-      </Section>
+            <Tip variant="warning" icon="⚡">
+              <strong className="text-foreground">Flaky detection:</strong> A test is marked flaky if it has retries &gt; 0 across 2+ runs. 
+              The Insights panel surfaces the most flaky tests with fix recommendations.
+            </Tip>
+          </AccordionContent>
+        </AccordionItem>
 
-      {/* Folder Structure */}
-      <Section title="Folder Structure & File Formats" icon="📁">
-        <p className="text-sm text-muted-foreground">
-          The dashboard supports multiple ways to import your test results. Drop files or folders directly on the dashboard or use the import button.
-        </p>
-
-        <div className="space-y-3">
-          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Supported Structures</h3>
-
-          <div className="flex items-start gap-2 p-3 rounded-md bg-success/10 border border-success/30 mb-3">
-            <span className="text-sm">✅</span>
-            <p className="text-xs text-muted-foreground">
-              <strong className="text-foreground">Playwright Native Support:</strong> You can directly import the JSON output from Playwright's built-in{" "}
-              <code className="font-mono bg-muted px-1 rounded">json</code> reporter — no custom reporter needed! Just run{" "}
-              <code className="font-mono bg-muted px-1 rounded">npx playwright test --reporter=json</code> and import the output file.
+        {/* File Formats */}
+        <AccordionItem value="formats" className="rounded-lg border bg-card px-4 sm:px-6">
+          <AccordionTrigger className="font-mono text-sm sm:text-base font-semibold text-foreground hover:no-underline py-4">
+            <span className="flex items-center gap-2"><span>📁</span> Supported File Formats</span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-4 pb-4">
+            <p className="text-sm text-muted-foreground">
+              Multiple import formats are supported. Drop files or folders directly on the dashboard.
             </p>
-          </div>
 
-          <CodeBlock title="Option 0: Playwright native JSON reporter (recommended)">{`// Generated by: npx playwright test --reporter=json > results.json
-// Or in playwright.config.ts:
-//   reporter: [['json', { outputFile: 'results.json' }]]
-//
-// Structure: { config, suites[], stats }
-// ✅ Directly supported — just import the file!
-{
-  "config": { "projects": [{ "name": "API Tests", "testDir": "tests/api" }] },
-  "suites": [
-    {
-      "title": "API Test Suite",
-      "file": "tests/api",
-      "suites": [
-        {
-          "title": "Order APIs",
-          "file": "tests/api/order.spec.ts",
-          "specs": [
-            {
-              "title": "Create Order API",
-              "ok": false,
-              "tests": [
-                {
-                  "annotations": [
-                    { "type": "endpoint", "description": "/orders" },
-                    { "type": "method", "description": "POST" }
-                  ],
-                  "results": [
-                    { "status": "failed", "duration": 1200,
-                      "error": { "message": "Expected 200 but received 500" } },
-                    { "status": "passed", "duration": 900 }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    }
-  ],
-  "stats": { "startTime": "2026-04-03T10:00:00.000Z", "duration": 4030 }
+            <Tip variant="success" icon="✅">
+              <strong className="text-foreground">Playwright Native:</strong> Directly import JSON from <code className="font-mono bg-muted px-1 rounded">npx playwright test --reporter=json</code>. No custom reporter needed!
+            </Tip>
+
+            <CodeBlock title="Format 1: Single run file">{`{
+  "manifest": { "runId": "run-001", "timestamp": "...", "branch": "main", ... },
+  "results": [{ "id": "t-1", "name": "auth > login", "status": "passed", ... }]
 }`}</CodeBlock>
-
-          <CodeBlock title="Option 1: Single run file">{`// results.json
-{
-  "manifest": {
-    "runId": "run-2026-04-01T10-00-00",
-    "timestamp": "2026-04-01T10:00:00.000Z",
-    "branch": "main",
-    "environment": "staging",
-    "total": 34, "passed": 30, "failed": 3, "skipped": 1,
-    "duration": 120
-  },
-  "results": [
-    {
-      "id": "test-1",
-      "name": "auth > login with valid credentials",
-      "suite": "auth",
-      "file": "tests/auth.spec.ts",
-      "status": "passed",
-      "duration": 1234,
-      "retries": 0,
-      "tags": ["smoke", "critical"],
-      "error": null,
-      "logs": ["[INFO] Starting login test"]
-    }
-  ]
-}`}</CodeBlock>
-
-          <CodeBlock title="Option 2: Multi-run array">{`// all-runs.json
-[
+            <CodeBlock title="Format 2: Multi-run array">{`[
   { "manifest": { ... }, "results": [ ... ] },
   { "manifest": { ... }, "results": [ ... ] }
 ]`}</CodeBlock>
-
-          <CodeBlock title="Option 3: Folder with manifest + suite files">{`test-results/
-├── manifest.json          ← run metadata (optional, auto-generated if missing)
-├── auth.json              ← array of TestResult[] for auth suite
-├── checkout.json          ← array of TestResult[] for checkout suite
-└── api.json               ← array of TestResult[] for api suite`}</CodeBlock>
-
-          <CodeBlock title="Option 4: Flat results array (manifest auto-generated)">{`// just-results.json
-[
-  { "id": "t-1", "name": "auth > login", "suite": "auth",
-    "file": "tests/auth.spec.ts", "status": "passed",
-    "duration": 1200, "retries": 0, "tags": ["smoke"] },
+            <CodeBlock title="Format 3: Folder structure">{`test-results/
+├── manifest.json
+├── auth.json
+├── checkout.json
+└── api.json`}</CodeBlock>
+            <CodeBlock title="Format 4: Flat results array (manifest auto-generated)">{`[
+  { "id": "t-1", "name": "auth > login", "suite": "auth", "status": "passed", ... },
   { "id": "t-2", "name": "checkout > add to cart", ... }
 ]`}</CodeBlock>
 
-          <CodeBlock title="Option 5: Nested folders (one folder per run)">{`test-results/
-├── run-2026-04-01/
-│   ├── manifest.json
-│   ├── auth.json
-│   └── checkout.json
-├── run-2026-04-02/
-│   └── results.json        ← full run file
-└── run-2026-04-03.json     ← single file at root`}</CodeBlock>
-        </div>
+            <Tip icon="🔄" variant="success">
+              <strong className="text-foreground">Persistence:</strong> Imported runs are saved to localStorage. They persist across reloads. Use "Reset Demo" to return to sample data.
+            </Tip>
+          </AccordionContent>
+        </AccordionItem>
 
-        <div className="flex items-start gap-2 p-3 rounded-md bg-primary/5 border border-primary/20">
-          <span className="text-sm">💡</span>
-          <p className="text-xs text-muted-foreground">
-            <strong className="text-foreground">Auto-detection:</strong> The importer automatically detects the file format. 
-            You can mix and match — drop a folder of run directories or individual JSON files. 
-            Duplicate runs (same <code className="font-mono bg-muted px-1 rounded">runId</code>) are automatically deduplicated.
-          </p>
-        </div>
-
-        <div className="flex items-start gap-2 p-3 rounded-md bg-success/10 border border-success/30">
-          <span className="text-sm">🔄</span>
-          <p className="text-xs text-muted-foreground">
-            <strong className="text-foreground">Persistence:</strong> Imported runs are saved to your browser's local storage. 
-            They persist across page reloads. Use the "Reset Demo" button on the dashboard to return to sample data.
-          </p>
-        </div>
-      </Section>
-
-      {/* Playwright Reporter Integration */}
-      <Section title="Playwright Reporter Integration" icon="🔌">
-        <p className="text-sm text-muted-foreground">
-          Create a custom Playwright reporter that outputs JSON in the format the dashboard expects:
-        </p>
-        <CodeBlock title="reporters/dashboard-reporter.ts">{`import { Reporter, TestCase, TestResult as PWResult, FullResult } from '@playwright/test/reporter';
+        {/* Custom Reporter */}
+        <AccordionItem value="reporter" className="rounded-lg border bg-card px-4 sm:px-6">
+          <AccordionTrigger className="font-mono text-sm sm:text-base font-semibold text-foreground hover:no-underline py-4">
+            <span className="flex items-center gap-2"><span>🔌</span> Custom Playwright Reporter</span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-4 pb-4">
+            <p className="text-sm text-muted-foreground">
+              For maximum control, create a custom reporter that outputs the exact format the dashboard expects:
+            </p>
+            <CodeBlock title="reporters/dashboard-reporter.ts">{`import { Reporter, TestCase, TestResult as PWResult, FullResult } from '@playwright/test/reporter';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -449,6 +513,9 @@ class DashboardReporter implements Reporter {
   onTestEnd(test: TestCase, result: PWResult) {
     const suite = test.parent.title || 'default';
     const apiAttachment = result.attachments.find(a => a.name === 'api-payload');
+    const severityTag = test.tags.find(t => 
+      ['@blocker','@critical','@normal','@minor','@trivial'].includes(t)
+    );
     
     this.results.push({
       id: test.id,
@@ -459,9 +526,16 @@ class DashboardReporter implements Reporter {
       duration: result.duration,
       retries: result.retry,
       tags: test.tags.map(t => t.replace('@', '')),
+      severity: severityTag?.replace('@', '') || undefined,
       error: result.error?.message ? \`\${result.error.message}\\n\${result.error.stack || ''}\` : undefined,
       logs: result.stdout.map(s => s.toString().trim()).filter(Boolean),
       apiPayload: apiAttachment ? JSON.parse(apiAttachment.body!.toString()) : undefined,
+      steps: result.steps.map(s => ({
+        name: s.title,
+        status: s.error ? 'failed' : 'passed',
+        duration: s.duration,
+        error: s.error?.message,
+      })),
     });
   }
   
@@ -493,112 +567,146 @@ class DashboardReporter implements Reporter {
 }
 
 export default DashboardReporter;`}</CodeBlock>
+            <Tip>
+              <strong className="text-foreground">CI Integration:</strong> Set <code className="font-mono bg-muted px-1 rounded">GIT_BRANCH</code> and <code className="font-mono bg-muted px-1 rounded">TEST_ENV</code> env vars in CI to auto-tag runs with branch and environment.
+            </Tip>
+          </AccordionContent>
+        </AccordionItem>
 
-        <CodeBlock title="playwright.config.ts">{`import { defineConfig } from '@playwright/test';
+        {/* Schema Reference */}
+        <AccordionItem value="schema" className="rounded-lg border bg-card px-4 sm:px-6">
+          <AccordionTrigger className="font-mono text-sm sm:text-base font-semibold text-foreground hover:no-underline py-4">
+            <span className="flex items-center gap-2"><span>📋</span> Schema Reference</span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-4 pb-4">
+            <div className="space-y-3">
+              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">TestResult Fields</h3>
+              <div className="rounded-lg border overflow-hidden">
+                <table className="w-full text-xs font-mono">
+                  <thead>
+                    <tr className="bg-muted">
+                      <th className="text-left px-3 py-2 text-muted-foreground font-medium">Field</th>
+                      <th className="text-left px-3 py-2 text-muted-foreground font-medium">Type</th>
+                      <th className="text-left px-3 py-2 text-muted-foreground font-medium">Description</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {[
+                      ["id", "string", "Unique test identifier"],
+                      ["name", "string", "Format: 'suite > test name'"],
+                      ["suite", "string", "Top-level describe() group"],
+                      ["file", "string", "Source file path"],
+                      ["status", "enum", "'passed' | 'failed' | 'skipped'"],
+                      ["duration", "number", "Milliseconds for test execution"],
+                      ["retries", "number", "Number of retry attempts"],
+                      ["tags", "string[]", "Array of tag labels"],
+                      ["error", "string?", "Error message + stack trace"],
+                      ["logs", "string[]?", "Captured console output lines"],
+                      ["apiPayload", "ApiPayload?", "API request/response data"],
+                      ["severity", "Severity?", "'blocker'|'critical'|'normal'|'minor'|'trivial'"],
+                      ["defectCategory", "DefectCategory?", "'product'|'test'|'infrastructure'|'unknown'"],
+                      ["steps", "TestStep[]?", "Step-by-step execution breakdown"],
+                    ].map(([field, type, desc]) => (
+                      <tr key={field} className="hover:bg-muted/30">
+                        <td className="px-3 py-2 text-foreground">{field}</td>
+                        <td className="px-3 py-2 text-muted-foreground">{type}</td>
+                        <td className="px-3 py-2 text-muted-foreground font-sans">{desc}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
 
-export default defineConfig({
-  reporter: [
-    ['list'],
-    ['./reporters/dashboard-reporter.ts'],  // Add our reporter
-  ],
-  // ...
-});`}</CodeBlock>
+            <div className="space-y-3">
+              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">TestStep Fields</h3>
+              <div className="rounded-lg border overflow-hidden">
+                <table className="w-full text-xs font-mono">
+                  <thead>
+                    <tr className="bg-muted">
+                      <th className="text-left px-3 py-2 text-muted-foreground font-medium">Field</th>
+                      <th className="text-left px-3 py-2 text-muted-foreground font-medium">Type</th>
+                      <th className="text-left px-3 py-2 text-muted-foreground font-medium">Description</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {[
+                      ["name", "string", "Step description"],
+                      ["status", "TestStatus", "'passed' | 'failed' | 'skipped'"],
+                      ["duration", "number", "Step duration in ms"],
+                      ["error", "string?", "Error if step failed"],
+                      ["steps", "TestStep[]?", "Nested sub-steps"],
+                    ].map(([field, type, desc]) => (
+                      <tr key={field} className="hover:bg-muted/30">
+                        <td className="px-3 py-2 text-foreground">{field}</td>
+                        <td className="px-3 py-2 text-muted-foreground">{type}</td>
+                        <td className="px-3 py-2 text-muted-foreground font-sans">{desc}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
 
-        <div className="flex items-start gap-2 p-3 rounded-md bg-primary/5 border border-primary/20">
-          <span className="text-sm">💡</span>
-          <p className="text-xs text-muted-foreground">
-            <strong className="text-foreground">CI Integration:</strong> Set <code className="font-mono bg-muted px-1 rounded">GIT_BRANCH</code> and{" "}
-            <code className="font-mono bg-muted px-1 rounded">TEST_ENV</code> environment variables in your CI pipeline to automatically tag runs with branch and environment metadata.
-          </p>
-        </div>
-      </Section>
+        {/* Failure Cause Analysis */}
+        <AccordionItem value="failure-analysis" className="rounded-lg border bg-card px-4 sm:px-6">
+          <AccordionTrigger className="font-mono text-sm sm:text-base font-semibold text-foreground hover:no-underline py-4">
+            <span className="flex items-center gap-2"><span>🔬</span> Failure Cause Analysis & Trends</span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-4 pb-4">
+            <p className="text-sm text-muted-foreground">
+              Each test's detail page automatically categorizes failures and shows pass/fail trends. Error classification:
+            </p>
 
-      {/* Result File Structure - field reference */}
-      <Section title="Result Schema Reference" icon="📋">
-        <div className="space-y-3">
-          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">TestResult Fields</h3>
-          <div className="rounded-lg border overflow-hidden">
-            <table className="w-full text-xs font-mono">
-              <thead>
-                <tr className="bg-muted">
-                  <th className="text-left px-3 py-2 text-muted-foreground font-medium">Field</th>
-                  <th className="text-left px-3 py-2 text-muted-foreground font-medium">Type</th>
-                  <th className="text-left px-3 py-2 text-muted-foreground font-medium">Description</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {[
-                  ["id", "string", "Unique test identifier"],
-                  ["name", "string", "Format: 'suite > test name'"],
-                  ["suite", "string", "Top-level describe() group"],
-                  ["file", "string", "Source file path"],
-                  ["status", "enum", "'passed' | 'failed' | 'skipped'"],
-                  ["duration", "number", "Milliseconds for test execution"],
-                  ["retries", "number", "Number of retry attempts"],
-                  ["tags", "string[]", "Array of tag labels"],
-                  ["error", "string?", "Error message + stack trace"],
-                  ["logs", "string[]?", "Captured console output lines"],
-                  ["apiPayload", "ApiPayload?", "API request/response data"],
-                ].map(([field, type, desc]) => (
-                  <tr key={field} className="hover:bg-muted/30">
-                    <td className="px-3 py-2 text-foreground">{field}</td>
-                    <td className="px-3 py-2 text-muted-foreground">{type}</td>
-                    <td className="px-3 py-2 text-muted-foreground font-sans">{desc}</td>
+            <div className="rounded-lg border overflow-hidden">
+              <table className="w-full text-xs font-mono">
+                <thead>
+                  <tr className="bg-muted">
+                    <th className="text-left px-3 py-2 text-muted-foreground font-medium">Category</th>
+                    <th className="text-left px-3 py-2 text-muted-foreground font-medium">Detected By</th>
+                    <th className="text-left px-3 py-2 text-muted-foreground font-medium">Example</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                </thead>
+                <tbody className="divide-y">
+                  {[
+                    ["⏱️ Timeout", "\"Timeout\" in error", "TimeoutError: Timeout 30000ms exceeded"],
+                    ["🌐 Network", "\"net::ERR\", \"502\"", "net::ERR_CONNECTION_REFUSED"],
+                    ["🔍 Element Not Found", "\"not found\"", "Element not found: #email-input"],
+                    ["🔀 State Mismatch", "\"expected\" + URL/text", "expected URL \"/dashboard\" but got \"/login\""],
+                    ["💥 Script Error", "\"TypeError\"", "Cannot read properties of null"],
+                    ["❌ Assertion", "\"assert\" in error", "expected element to be visible"],
+                  ].map(([cat, detection, example]) => (
+                    <tr key={cat} className="hover:bg-muted/30">
+                      <td className="px-3 py-2 text-foreground font-sans">{cat}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{detection}</td>
+                      <td className="px-3 py-2 text-destructive/70 truncate max-w-[200px]">{example}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-        <div className="space-y-3">
-          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">RunManifest Fields</h3>
-          <div className="rounded-lg border overflow-hidden">
-            <table className="w-full text-xs font-mono">
-              <thead>
-                <tr className="bg-muted">
-                  <th className="text-left px-3 py-2 text-muted-foreground font-medium">Field</th>
-                  <th className="text-left px-3 py-2 text-muted-foreground font-medium">Type</th>
-                  <th className="text-left px-3 py-2 text-muted-foreground font-medium">Description</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {[
-                  ["runId", "string", "Unique run identifier"],
-                  ["timestamp", "string", "ISO 8601 timestamp"],
-                  ["branch", "string", "Git branch name"],
-                  ["environment", "string", "Deploy environment (staging, prod)"],
-                  ["total", "number", "Total test count"],
-                  ["passed", "number", "Passed test count"],
-                  ["failed", "number", "Failed test count"],
-                  ["skipped", "number", "Skipped test count"],
-                  ["duration", "number", "Total duration in seconds"],
-                ].map(([field, type, desc]) => (
-                  <tr key={field} className="hover:bg-muted/30">
-                    <td className="px-3 py-2 text-foreground">{field}</td>
-                    <td className="px-3 py-2 text-muted-foreground">{type}</td>
-                    <td className="px-3 py-2 text-muted-foreground font-sans">{desc}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </Section>
+            <Tip variant="success" icon="📊">
+              <strong className="text-foreground">What you get:</strong> Status Timeline, Failure Cause Analysis with frequency, sample errors, and actionable fix suggestions — all on each test's detail page.
+            </Tip>
+          </AccordionContent>
+        </AccordionItem>
 
-      {/* Naming Conventions */}
-      <Section title="Naming Conventions" icon="✏️">
-        <p className="text-sm text-muted-foreground">
-          The dashboard uses the test name format <code className="font-mono text-xs bg-muted px-1 py-0.5 rounded">suite &gt; test name</code> for grouping and display.
-        </p>
-        <CodeBlock title="Recommended naming">{`// ✅ Good — clear suite > test pattern
+        {/* Naming Conventions */}
+        <AccordionItem value="naming" className="rounded-lg border bg-card px-4 sm:px-6">
+          <AccordionTrigger className="font-mono text-sm sm:text-base font-semibold text-foreground hover:no-underline py-4">
+            <span className="flex items-center gap-2"><span>✏️</span> Naming Conventions</span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-4 pb-4">
+            <CodeBlock title="Recommended naming">{`// ✅ Good — clear suite > test pattern
 test.describe('auth', () => {
   test('login with valid credentials', ...);
-  test('login with invalid password', ...);
 });
 // Produces: "auth > login with valid credentials"
 
-// ✅ Good — nested describes for sub-features
+// ✅ Good — nested describes
 test.describe('checkout', () => {
   test.describe('cart', () => {
     test('add item', ...);
@@ -610,76 +718,9 @@ test.describe('checkout', () => {
 test.describe('auth', () => {
   test('auth login works', ...); // "auth" is duplicated
 });`}</CodeBlock>
-      </Section>
-
-      {/* Failure Cause Analysis */}
-      <Section title="Failure Cause Analysis & Trends" icon="🔬">
-        <p className="text-sm text-muted-foreground">
-          Each test's detail page automatically categorizes failures into actionable groups and shows pass/fail trends over time. 
-          The dashboard classifies errors into these categories:
-        </p>
-
-        <div className="rounded-lg border overflow-hidden">
-          <table className="w-full text-xs font-mono">
-            <thead>
-              <tr className="bg-muted">
-                <th className="text-left px-3 py-2 text-muted-foreground font-medium">Category</th>
-                <th className="text-left px-3 py-2 text-muted-foreground font-medium">Detected By</th>
-                <th className="text-left px-3 py-2 text-muted-foreground font-medium">Example</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {[
-                ["⏱️ Timeout", "\"Timeout\" in error", "TimeoutError: locator.click: Timeout 30000ms exceeded"],
-                ["🌐 Network", "\"net::ERR\", \"502\", \"connection\"", "Error: net::ERR_CONNECTION_REFUSED"],
-                ["🔍 Element Not Found", "\"not found\", \"no element matches\"", "Error: Element not found: #email-input"],
-                ["🔀 State Mismatch", "\"expected\" + URL/text comparison", "expected URL \"/dashboard\" but got \"/login\""],
-                ["💥 Script Error", "\"TypeError\", \"ReferenceError\"", "TypeError: Cannot read properties of null"],
-                ["❌ Assertion", "\"assert\" in error", "AssertionError: expected element to be visible"],
-              ].map(([cat, detection, example]) => (
-                <tr key={cat} className="hover:bg-muted/30">
-                  <td className="px-3 py-2 text-foreground font-sans">{cat}</td>
-                  <td className="px-3 py-2 text-muted-foreground">{detection}</td>
-                  <td className="px-3 py-2 text-destructive/70 truncate max-w-[250px]">{example}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <CodeBlock title="Writing categorizable error messages">{`// ✅ Good — produces clear "Timeout" category
-await page.locator('.submit-btn').click({ timeout: 10000 });
-// Error: "TimeoutError: locator.click: Timeout 10000ms exceeded"
-
-// ✅ Good — produces clear "Assertion" category
-await expect(page.locator('.cart-count')).toHaveText('3');
-// Error: "AssertionError: expected '0' to equal '3'"
-
-// ✅ Good — produces clear "State Mismatch" category
-await expect(page).toHaveURL('/dashboard');
-// Error: "expected URL '/dashboard' but got '/login'"
-
-// ❌ Avoid — produces unhelpful "Other" category
-throw new Error('Test failed');
-// Better: throw new Error('Expected cart total $49.99 but got $0.00');`}</CodeBlock>
-
-        <div className="flex items-start gap-2 p-3 rounded-md bg-primary/5 border border-primary/20">
-          <span className="text-sm">💡</span>
-          <p className="text-xs text-muted-foreground">
-            <strong className="text-foreground">Pro tip:</strong> Use Playwright's built-in assertions (<code className="font-mono bg-muted px-1 rounded">expect(locator).toHaveText()</code>, 
-            <code className="font-mono bg-muted px-1 rounded">expect(page).toHaveURL()</code>) instead of generic <code className="font-mono bg-muted px-1 rounded">throw new Error()</code>. 
-            They produce structured error messages that the dashboard can automatically categorize and group.
-          </p>
-        </div>
-
-        <div className="flex items-start gap-2 p-3 rounded-md bg-success/10 border border-success/30">
-          <span className="text-sm">📊</span>
-          <p className="text-xs text-muted-foreground">
-            <strong className="text-foreground">What you get:</strong> On each test's detail page you'll see a <strong>Pass/Fail Trend</strong> chart showing status across runs, 
-            plus a <strong>Failure Cause Analysis</strong> panel that groups failures by category, shows frequency, sample errors, and actionable fix suggestions.
-          </p>
-        </div>
-      </Section>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
   );
 };
