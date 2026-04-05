@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { IngestionResult } from "@/services/fileIngestion";
 
 const DashboardPage = () => {
-  const { runs, loading, dataMode, importRuns, switchToDemo } = useRuns();
+  const { runs, loading, dataMode, importRuns, removeRun, switchToDemo } = useRuns();
   const navigate = useNavigate();
 
   const handleImport = (result: IngestionResult) => {
