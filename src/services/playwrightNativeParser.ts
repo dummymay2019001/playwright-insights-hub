@@ -1,11 +1,5 @@
-import { TestRun, TestResult, TestStatus, RunManifest, ApiPayload } from "@/models/types";
-
-/**
- * Parses Playwright's built-in JSON reporter output format.
- * Structure: { config, suites[], stats }
- * 
- * suites[] are nested: suite > suites[] > specs[] > tests[] > results[]
- */
+import { TestRun, TestResult, TestStatus, RunManifest, ApiPayload, TestStep } from "@/models/types";
+import { classifyDefect, inferSeverity } from "@/services/defectClassifier";
 
 interface PWAttachment {
   name: string;
@@ -25,6 +19,14 @@ interface PWResult {
   attachments?: PWAttachment[];
   stdout?: string[];
   stderr?: string[];
+  steps?: PWStepResult[];
+}
+
+interface PWStepResult {
+  title: string;
+  duration: number;
+  error?: PWError;
+  steps?: PWStepResult[];
 }
 
 interface PWTest {
@@ -66,14 +68,23 @@ interface PlaywrightNativeReport {
   stats?: PWStats;
 }
 
-/** Detect if a parsed JSON object is a Playwright native report */
 export function isPlaywrightNativeReport(obj: unknown): obj is PlaywrightNativeReport {
   if (!obj || typeof obj !== "object") return false;
   const o = obj as Record<string, unknown>;
   return Array.isArray(o.suites) && (o.stats !== undefined || o.config !== undefined);
 }
 
-/** Convert Playwright native report into our TestRun format */
+function convertSteps(pwSteps?: PWStepResult[]): TestStep[] | undefined {
+  if (!pwSteps || pwSteps.length === 0) return undefined;
+  return pwSteps.map(s => ({
+    name: s.title,
+    status: s.error ? "failed" as TestStatus : "passed" as TestStatus,
+    duration: s.duration,
+    error: s.error ? [s.error.message, s.error.stack].filter(Boolean).join("\n") : undefined,
+    steps: convertSteps(s.steps),
+  }));
+}
+
 export function parsePlaywrightNativeReport(report: PlaywrightNativeReport, fileName: string): TestRun {
   const results: TestResult[] = [];
   let testCounter = 0;
@@ -85,26 +96,25 @@ export function parsePlaywrightNativeReport(report: PlaywrightNativeReport, file
       if (a.type === "tag" && a.description) {
         tags.push(a.description.replace(/^@/, ""));
       }
+      if (a.type === "severity" && a.description) {
+        tags.push(a.description.replace(/^@/, ""));
+      }
     }
     return tags;
   }
 
   function extractApiPayload(annotations?: Array<{ type: string; description?: string }>, attachments?: PWAttachment[]): ApiPayload | undefined {
     if (!annotations) return undefined;
-    
     const method = annotations.find(a => a.type === "method")?.description;
     const url = annotations.find(a => a.type === "endpoint")?.description;
-    
     if (!method && !url) return undefined;
 
     let requestBody: unknown;
     let responseBody: unknown;
-    let statusCode: number | undefined;
 
     if (attachments) {
       const reqAttach = attachments.find(a => a.name === "request" || a.name === "api-request");
       const resAttach = attachments.find(a => a.name === "response" || a.name === "api-response");
-      
       if (reqAttach?.body) {
         try { requestBody = JSON.parse(reqAttach.body); } catch { requestBody = reqAttach.body; }
       }
@@ -113,19 +123,17 @@ export function parsePlaywrightNativeReport(report: PlaywrightNativeReport, file
       }
     }
 
-    return { method, url, statusCode, requestBody, responseBody };
+    return { method, url, requestBody, responseBody };
   }
 
   function processSuite(suite: PWSuite, parentSuiteName: string) {
     const suiteName = parentSuiteName ? `${parentSuiteName} > ${suite.title}` : suite.title;
     const file = suite.file || "unknown";
 
-    // Process specs (leaf-level test groups)
     if (suite.specs) {
       for (const spec of suite.specs) {
         for (const test of spec.tests) {
           testCounter++;
-          // Take the last result (final attempt after retries)
           const lastResult = test.results[test.results.length - 1];
           if (!lastResult) continue;
 
@@ -138,7 +146,6 @@ export function parsePlaywrightNativeReport(report: PlaywrightNativeReport, file
           const service = test.annotations?.find(a => a.type === "service")?.description;
           if (service && !tags.includes(service)) tags.push(service);
 
-          // Add @api tag if method/endpoint annotations present
           const hasApiAnnotations = test.annotations?.some(a => a.type === "method" || a.type === "endpoint");
           if (hasApiAnnotations && !tags.includes("api")) tags.push("api");
 
@@ -152,10 +159,12 @@ export function parsePlaywrightNativeReport(report: PlaywrightNativeReport, file
           if (lastResult.stdout) logs.push(...lastResult.stdout);
           if (lastResult.stderr) logs.push(...lastResult.stderr.map(s => `[ERROR] ${s}`));
 
+          const steps = convertSteps(lastResult.steps);
+
           results.push({
             id: `pw-${testCounter}-${Date.now()}`,
             name: `${suiteName} > ${spec.title}`,
-            suite: suiteName.split(" > ")[0], // top-level suite
+            suite: suiteName.split(" > ")[0],
             file,
             status,
             duration: lastResult.duration,
@@ -164,12 +173,14 @@ export function parsePlaywrightNativeReport(report: PlaywrightNativeReport, file
             error,
             logs: logs.length > 0 ? logs : undefined,
             apiPayload,
+            severity: inferSeverity(tags, status === "failed" ? error : undefined),
+            defectCategory: status === "failed" ? classifyDefect(error) : undefined,
+            steps,
           });
         }
       }
     }
 
-    // Recurse into nested suites
     if (suite.suites) {
       for (const child of suite.suites) {
         processSuite(child, suiteName);
@@ -177,12 +188,10 @@ export function parsePlaywrightNativeReport(report: PlaywrightNativeReport, file
     }
   }
 
-  // Process all top-level suites
   for (const suite of report.suites) {
     processSuite(suite, "");
   }
 
-  // Build manifest
   const passed = results.filter(r => r.status === "passed").length;
   const failed = results.filter(r => r.status === "failed").length;
   const skipped = results.filter(r => r.status === "skipped").length;
