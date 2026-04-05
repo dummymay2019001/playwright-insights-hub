@@ -61,6 +61,10 @@ const InsightsPage = () => {
     );
   }
 
+  const { healthScore } = insights;
+  const criticalCount = insights.newlyFailing.length + insights.failureHotspots.length;
+  const warningCount = insights.frequentlyFailing.length + insights.flakyCandidates.length + insights.durationRegressions.length;
+
   return (
     <div className="container py-4 sm:py-6 space-y-6">
       {/* Health Overview */}
