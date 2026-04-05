@@ -35,6 +35,36 @@ const InsightsPage = () => {
   const criticalCount = insights.newlyFailing.length + insights.failureHotspots.length;
   const warningCount = insights.frequentlyFailing.length + insights.flakyCandidates.length + insights.durationRegressions.length;
 
+  // Aggregate defect categories from latest run
+  const defectBreakdown = useMemo(() => {
+    const latest = [...runs].sort((a, b) => new Date(b.manifest.timestamp).getTime() - new Date(a.manifest.timestamp).getTime())[0];
+    if (!latest) return [];
+    const catMap = new Map<DefectCategory, number>();
+    for (const t of latest.results) {
+      if (t.status === "failed" && t.defectCategory) {
+        catMap.set(t.defectCategory, (catMap.get(t.defectCategory) || 0) + 1);
+      }
+    }
+    return [...catMap.entries()].map(([cat, count]) => ({ cat, count, meta: DEFECT_CATEGORY_META[cat] })).sort((a, b) => b.count - a.count);
+  }, [runs]);
+
+  // Severity distribution from latest run
+  const severityBreakdown = useMemo(() => {
+    const latest = [...runs].sort((a, b) => new Date(b.manifest.timestamp).getTime() - new Date(a.manifest.timestamp).getTime())[0];
+    if (!latest) return [];
+    const sevMap = new Map<Severity, { total: number; failed: number }>();
+    for (const t of latest.results) {
+      const sev = t.severity || "normal";
+      const entry = sevMap.get(sev) || { total: 0, failed: 0 };
+      entry.total++;
+      if (t.status === "failed") entry.failed++;
+      sevMap.set(sev, entry);
+    }
+    return [...sevMap.entries()]
+      .map(([sev, data]) => ({ sev, ...data, meta: SEVERITY_META[sev] }))
+      .sort((a, b) => a.meta.priority - b.meta.priority);
+  }, [runs]);
+
   return (
     <div className="container py-4 sm:py-6 space-y-6">
       {/* Health Overview */}
