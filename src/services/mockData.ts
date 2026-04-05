@@ -1,4 +1,5 @@
-import { RunManifest, TestResult, TestRun, TestStatus, ApiPayload } from "@/models/types";
+import { RunManifest, TestResult, TestRun, TestStatus, ApiPayload, Severity, TestStep } from "@/models/types";
+import { classifyDefect, inferSeverity } from "@/services/defectClassifier";
 
 const SUITES = ["auth", "checkout", "dashboard", "profile", "settings", "api", "navigation"];
 const TAGS_MAP: Record<string, string[]> = {
@@ -82,19 +83,47 @@ function generateFailureLogs(name: string, rand: () => number): string[] {
   return logs;
 }
 
+// Generate realistic test steps
+const STEP_TEMPLATES: Record<string, string[]> = {
+  auth: ["Navigate to login page", "Fill email input", "Fill password input", "Click submit button", "Wait for navigation", "Verify dashboard URL"],
+  checkout: ["Navigate to products page", "Select product", "Click add to cart", "Open cart sidebar", "Verify cart count", "Proceed to checkout"],
+  dashboard: ["Navigate to dashboard", "Wait for data load", "Verify summary cards", "Check chart rendering", "Validate filter controls"],
+  profile: ["Navigate to profile page", "Click edit button", "Modify field value", "Click save button", "Verify success toast"],
+  settings: ["Navigate to settings", "Locate setting toggle", "Change value", "Verify update saved", "Refresh page", "Verify persistence"],
+  api: ["Prepare request payload", "Send API request", "Validate status code", "Parse response body", "Assert response schema"],
+  navigation: ["Click navigation element", "Wait for route change", "Verify page content", "Check breadcrumbs", "Verify active state"],
+};
+
+function generateSteps(suite: string, status: TestStatus, rand: () => number): TestStep[] {
+  const templates = STEP_TEMPLATES[suite] || STEP_TEMPLATES.auth;
+  const stepCount = Math.min(templates.length, 3 + Math.floor(rand() * 3));
+  const failAtStep = status === "failed" ? Math.floor(rand() * stepCount) : -1;
+
+  return templates.slice(0, stepCount).map((name, i) => {
+    const stepStatus: TestStatus = i < failAtStep || (failAtStep === -1 && status !== "skipped")
+      ? "passed"
+      : i === failAtStep
+      ? "failed"
+      : status === "skipped" ? "skipped" : "passed";
+    
+    return {
+      name,
+      status: stepStatus,
+      duration: Math.round(50 + rand() * 800),
+      error: stepStatus === "failed" ? `Step "${name}" failed` : undefined,
+    };
+  });
+}
+
 function generateResults(runIndex: number): TestResult[] {
   const rand = seededRandom(runIndex * 1000 + 42);
   const results: TestResult[] = [];
   let id = 0;
 
-  // Gradually introduce suites: early runs have fewer suites
-  // Run 0: 3 suites, Run 1: 4, Run 2: 5, Run 3+: 6, Run 5+: all 7
   const availableSuites = SUITES.slice(0, Math.min(SUITES.length, 3 + Math.floor(runIndex * 0.7)));
 
   for (const suite of availableSuites) {
     const allTests = TEST_NAMES[suite];
-    // Gradually introduce tests within a suite
-    // Early runs might have fewer tests per suite
     const testCount = Math.min(allTests.length, Math.max(2, Math.floor(allTests.length * (0.5 + runIndex * 0.08))));
     const availableTests = allTests.slice(0, testCount);
 
@@ -107,21 +136,26 @@ function generateResults(runIndex: number): TestResult[] {
 
       const retries = status === "failed" && rand() > 0.5 ? Math.floor(rand() * 3) + 1 : 0;
       const baseDuration = 200 + rand() * 4000;
-
       const apiPayload: ApiPayload | undefined = suite === "api" ? generateApiPayload(name, status, rand) : undefined;
+      const error = status === "failed" ? generateErrorMessage(suite, name, rand) : undefined;
+      const tags = TAGS_MAP[suite] || [];
+      const finalStatus = retries > 0 && rand() > 0.6 ? "passed" : status;
 
       results.push({
         id: `test-${runIndex}-${id}`,
         name: `${suite} > ${name}`,
         suite,
         file: `tests/${suite}.spec.ts`,
-        status: retries > 0 && rand() > 0.6 ? "passed" : status,
+        status: finalStatus,
         duration: Math.round(baseDuration),
         retries,
-        tags: TAGS_MAP[suite] || [],
-        error: status === "failed" ? generateErrorMessage(suite, name, rand) : undefined,
+        tags,
+        error: finalStatus === "failed" ? error : undefined,
         logs: status === "failed" ? generateFailureLogs(name, rand) : undefined,
         apiPayload,
+        severity: inferSeverity(tags, finalStatus === "failed" ? error : undefined),
+        defectCategory: finalStatus === "failed" ? classifyDefect(error) : undefined,
+        steps: generateSteps(suite, finalStatus, rand),
       });
     }
   }
