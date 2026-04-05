@@ -15,26 +15,6 @@ const InsightsPage = () => {
 
   const insights = useMemo(() => computeInsights(runs), [runs]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="font-mono text-muted-foreground animate-pulse">Loading…</div>
-      </div>
-    );
-  }
-
-  if (!insights) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="font-mono text-muted-foreground">No data available</p>
-      </div>
-    );
-  }
-
-  const { healthScore } = insights;
-  const criticalCount = insights.newlyFailing.length + insights.failureHotspots.length;
-  const warningCount = insights.frequentlyFailing.length + insights.flakyCandidates.length + insights.durationRegressions.length;
-
   // Aggregate defect categories from latest run
   const defectBreakdown = useMemo(() => {
     const latest = [...runs].sort((a, b) => new Date(b.manifest.timestamp).getTime() - new Date(a.manifest.timestamp).getTime())[0];
@@ -64,6 +44,22 @@ const InsightsPage = () => {
       .map(([sev, data]) => ({ sev, ...data, meta: SEVERITY_META[sev] }))
       .sort((a, b) => a.meta.priority - b.meta.priority);
   }, [runs]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="font-mono text-muted-foreground animate-pulse">Loading…</div>
+      </div>
+    );
+  }
+
+  if (!insights) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="font-mono text-muted-foreground">No data available</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container py-4 sm:py-6 space-y-6">
