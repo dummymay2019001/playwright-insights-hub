@@ -6,6 +6,8 @@ import { HealthGauge } from "@/components/HealthGauge";
 import { InsightSection } from "@/components/InsightSection";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Badge } from "@/components/ui/badge";
+import { DEFECT_CATEGORY_META, SEVERITY_META } from "@/services/defectClassifier";
+import { DefectCategory, Severity } from "@/models/types";
 
 const InsightsPage = () => {
   const { runs, loading } = useRuns();
