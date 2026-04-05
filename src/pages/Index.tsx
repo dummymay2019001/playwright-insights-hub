@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { IngestionResult } from "@/services/fileIngestion";
 
 const DashboardPage = () => {
-  const { runs, loading, dataMode, importRuns, switchToDemo } = useRuns();
+  const { runs, loading, dataMode, importRuns, removeRun, switchToDemo } = useRuns();
   const navigate = useNavigate();
 
   const handleImport = (result: IngestionResult) => {
@@ -188,7 +188,7 @@ const DashboardPage = () => {
         </div>
         <div className="space-y-2">
           {sortedRuns.map((run) => (
-            <RunRow key={run.manifest.runId} manifest={run.manifest} />
+            <RunRow key={run.manifest.runId} manifest={run.manifest} onRemove={dataMode === "imported" ? removeRun : undefined} />
           ))}
         </div>
       </section>

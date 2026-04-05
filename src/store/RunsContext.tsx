@@ -11,6 +11,7 @@ interface RunsContextValue {
   dataMode: DataMode;
   getRunById: (id: string) => TestRun | undefined;
   importRuns: (newRuns: TestRun[], append?: boolean) => void;
+  removeRun: (runId: string) => void;
   clearRuns: () => void;
   switchToDemo: () => void;
 }
@@ -74,8 +75,21 @@ export function RunsProvider({ children }: { children: ReactNode }) {
     setDataMode("demo");
   }, []);
 
+  const removeRun = useCallback((runId: string) => {
+    setRuns((prev) => {
+      const updated = prev.filter((r) => r.manifest.runId !== runId);
+      if (updated.length === 0) {
+        clearStoredRuns();
+        setDataMode("demo");
+        return generateMockRuns(8);
+      }
+      saveRunsToStorage(updated);
+      return updated;
+    });
+  }, []);
+
   return (
-    <RunsContext.Provider value={{ runs, loading, dataMode, getRunById, importRuns, clearRuns, switchToDemo }}>
+    <RunsContext.Provider value={{ runs, loading, dataMode, getRunById, importRuns, removeRun, clearRuns, switchToDemo }}>
       {children}
     </RunsContext.Provider>
   );
