@@ -11,6 +11,7 @@ interface RunsContextValue {
   dataMode: DataMode;
   getRunById: (id: string) => TestRun | undefined;
   importRuns: (newRuns: TestRun[], append?: boolean) => void;
+  removeRun: (runId: string) => void;
   clearRuns: () => void;
   switchToDemo: () => void;
 }
