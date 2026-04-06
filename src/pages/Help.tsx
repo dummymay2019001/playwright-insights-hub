@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Accordion,
@@ -5,6 +6,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
+import { Copy, Check } from "lucide-react";
 
 const CodeBlock = ({ children, title }: { children: string; title?: string }) => (
   <div className="rounded-lg border bg-muted/50 overflow-hidden">
