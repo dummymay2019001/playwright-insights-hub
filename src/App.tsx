@@ -11,6 +11,7 @@ import Trends from "./pages/Trends.tsx";
 import Insights from "./pages/Insights.tsx";
 import TestDetail from "./pages/TestDetail.tsx";
 import ExportPage from "./pages/ExportPage.tsx";
+import SuiteExportPage from "./pages/SuiteExportPage.tsx";
 import SuiteDetail from "./pages/SuiteDetail.tsx";
 import EnvironmentsPage from "./pages/Environments.tsx";
 import HelpPage from "./pages/Help.tsx";
@@ -35,6 +36,7 @@ const App = () => (
               <Route path="/test/:testName" element={<TestDetail />} />
               <Route path="/suite/:suiteName" element={<SuiteDetail />} />
               <Route path="/environments" element={<EnvironmentsPage />} />
+              <Route path="/export/suite/:suiteName" element={<SuiteExportPage />} />
               <Route path="/export/:runId" element={<ExportPage />} />
               <Route path="/help" element={<HelpPage />} />
               <Route path="/about" element={<AboutPage />} />
