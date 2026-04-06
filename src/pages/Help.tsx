@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Accordion,
@@ -5,6 +6,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
+import { Copy, Check } from "lucide-react";
 
 const CodeBlock = ({ children, title }: { children: string; title?: string }) => (
   <div className="rounded-lg border bg-muted/50 overflow-hidden">
@@ -825,7 +828,790 @@ test.describe('auth', () => {
             </Tip>
           </AccordionContent>
         </AccordionItem>
+        {/* Code Snippets & Examples */}
+        <AccordionItem value="code-snippets" className="rounded-lg border bg-card px-4 sm:px-6">
+          <AccordionTrigger className="font-mono text-sm sm:text-base font-semibold text-foreground hover:no-underline py-4">
+            <span className="flex items-center gap-2"><span>💻</span> Code Snippets &amp; Examples</span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-6 pb-4">
+            <p className="text-sm text-muted-foreground">
+              Real-world, copy-paste-ready examples for common UI and API automation patterns with Playwright.
+            </p>
+
+            {/* UI Automation */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                <span>🖥️</span> UI Automation Examples
+              </h3>
+
+              <SnippetBlock
+                title="Login with Page Object Model"
+                language="typescript"
+                code={`// pages/LoginPage.ts
+import { Page, Locator, expect } from '@playwright/test';
+
+export class LoginPage {
+  readonly page: Page;
+  readonly emailInput: Locator;
+  readonly passwordInput: Locator;
+  readonly submitBtn: Locator;
+  readonly errorMsg: Locator;
+
+  constructor(page: Page) {
+    this.page = page;
+    this.emailInput = page.locator('#email');
+    this.passwordInput = page.locator('#password');
+    this.submitBtn = page.locator('button[type="submit"]');
+    this.errorMsg = page.locator('[data-testid="error-message"]');
+  }
+
+  async goto() {
+    await this.page.goto('/login');
+  }
+
+  async login(email: string, password: string) {
+    await this.emailInput.fill(email);
+    await this.passwordInput.fill(password);
+    await this.submitBtn.click();
+  }
+
+  async expectError(text: string) {
+    await expect(this.errorMsg).toContainText(text);
+  }
+}
+
+// tests/login.spec.ts
+import { test, expect } from '@playwright/test';
+import { LoginPage } from '../pages/LoginPage';
+
+test.describe('auth', () => {
+  test('successful login', { tag: ['@smoke', '@critical'] }, async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    await loginPage.goto();
+    await loginPage.login('admin@test.com', 'password123');
+    await expect(page).toHaveURL('/dashboard');
+  });
+
+  test('invalid credentials', { tag: ['@regression'] }, async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    await loginPage.goto();
+    await loginPage.login('admin@test.com', 'wrong');
+    await loginPage.expectError('Invalid credentials');
+  });
+});`}
+              />
+
+              <SnippetBlock
+                title="Form Validation with Data-Driven Tests"
+                language="typescript"
+                code={`import { test, expect } from '@playwright/test';
+
+const invalidInputs = [
+  { field: 'email', value: 'not-an-email', error: 'Invalid email format' },
+  { field: 'phone', value: '123', error: 'Phone must be 10 digits' },
+  { field: 'zip', value: 'abcde', error: 'Invalid zip code' },
+];
+
+for (const { field, value, error } of invalidInputs) {
+  test(\`validation: \${field} rejects "\${value}"\`, {
+    tag: ['@regression', '@ui'],
+  }, async ({ page }) => {
+    await page.goto('/register');
+    await page.fill(\`[name="\${field}"]\`, value);
+    await page.click('button[type="submit"]');
+    await expect(page.locator(\`[data-error="\${field}"]\`)).toHaveText(error);
+  });
+}`}
+              />
+
+              <SnippetBlock
+                title="Visual Regression with Screenshots"
+                language="typescript"
+                code={`import { test, expect } from '@playwright/test';
+
+test.describe('visual', { tag: '@visual' }, () => {
+  test('dashboard renders correctly', async ({ page }) => {
+    await page.goto('/dashboard');
+    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveScreenshot('dashboard.png', {
+      maxDiffPixelRatio: 0.01,
+      fullPage: true,
+    });
+  });
+
+  test('responsive mobile layout', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/dashboard');
+    await expect(page.locator('.sidebar')).not.toBeVisible();
+    await expect(page.locator('.mobile-menu')).toBeVisible();
+    await expect(page).toHaveScreenshot('dashboard-mobile.png');
+  });
+
+  test('dark mode toggle', async ({ page }) => {
+    await page.goto('/settings');
+    await page.click('[data-testid="theme-toggle"]');
+    await expect(page.locator('html')).toHaveAttribute('class', /dark/);
+    await expect(page).toHaveScreenshot('dark-mode.png');
+  });
+});`}
+              />
+
+              <SnippetBlock
+                title="File Upload & Download Testing"
+                language="typescript"
+                code={`import { test, expect } from '@playwright/test';
+import path from 'path';
+
+test.describe('file-ops', { tag: '@regression' }, () => {
+  test('upload CSV and verify preview', async ({ page }) => {
+    await page.goto('/import');
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles(path.join(__dirname, 'fixtures/data.csv'));
+    await expect(page.locator('.preview-table')).toBeVisible();
+    await expect(page.locator('.row-count')).toHaveText('150 rows');
+  });
+
+  test('download report as PDF', async ({ page }) => {
+    await page.goto('/reports/123');
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.click('#export-pdf'),
+    ]);
+    expect(download.suggestedFilename()).toMatch(/report.*\\.pdf$/);
+    const filePath = await download.path();
+    expect(filePath).toBeTruthy();
+  });
+});`}
+              />
+
+              <SnippetBlock
+                title="Multi-Tab & Popup Handling"
+                language="typescript"
+                code={`import { test, expect } from '@playwright/test';
+
+test('OAuth popup login', { tag: ['@smoke'] }, async ({ page, context }) => {
+  await page.goto('/login');
+
+  // Listen for popup before clicking
+  const [popup] = await Promise.all([
+    context.waitForEvent('page'),
+    page.click('#google-login'),
+  ]);
+
+  // Interact with OAuth popup
+  await popup.waitForLoadState();
+  await popup.fill('#identifierId', 'test@gmail.com');
+  await popup.click('#identifierNext');
+
+  // Popup closes, verify main page
+  await page.waitForURL('/dashboard');
+  await expect(page.locator('.user-avatar')).toBeVisible();
+});`}
+              />
+            </div>
+
+            {/* API Automation */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                <span>🔗</span> API Automation Examples
+              </h3>
+
+              <SnippetBlock
+                title="CRUD API Testing with Chained Requests"
+                language="typescript"
+                code={`import { test, expect } from '@playwright/test';
+
+test.describe('users-api', { tag: ['@api', '@critical'] }, () => {
+  let userId: string;
+
+  test('POST /api/users — create user', async ({ request }) => {
+    const res = await request.post('/api/users', {
+      data: { name: 'Jane Doe', email: 'jane@test.com', role: 'admin' },
+    });
+    expect(res.status()).toBe(201);
+    const body = await res.json();
+    expect(body).toHaveProperty('id');
+    expect(body.name).toBe('Jane Doe');
+    userId = body.id;
+  });
+
+  test('GET /api/users/:id — fetch user', async ({ request }) => {
+    const res = await request.get(\`/api/users/\${userId}\`);
+    expect(res.status()).toBe(200);
+    const body = await res.json();
+    expect(body.email).toBe('jane@test.com');
+  });
+
+  test('PATCH /api/users/:id — update user', async ({ request }) => {
+    const res = await request.patch(\`/api/users/\${userId}\`, {
+      data: { role: 'viewer' },
+    });
+    expect(res.status()).toBe(200);
+    const body = await res.json();
+    expect(body.role).toBe('viewer');
+  });
+
+  test('DELETE /api/users/:id — remove user', async ({ request }) => {
+    const res = await request.delete(\`/api/users/\${userId}\`);
+    expect(res.status()).toBe(204);
+    // Verify it's gone
+    const check = await request.get(\`/api/users/\${userId}\`);
+    expect(check.status()).toBe(404);
+  });
+});`}
+              />
+
+              <SnippetBlock
+                title="Auth Token & Protected Endpoints"
+                language="typescript"
+                code={`import { test, expect } from '@playwright/test';
+
+let authToken: string;
+
+test.beforeAll('get auth token', async ({ request }) => {
+  const res = await request.post('/api/auth/login', {
+    data: { email: 'admin@test.com', password: 'secret' },
+  });
+  const body = await res.json();
+  authToken = body.token;
+});
+
+test.describe('protected-api', { tag: ['@api'] }, () => {
+  test('GET /api/orders — with auth', async ({ request }) => {
+    const res = await request.get('/api/orders', {
+      headers: { Authorization: \`Bearer \${authToken}\` },
+    });
+    expect(res.status()).toBe(200);
+    const orders = await res.json();
+    expect(orders.length).toBeGreaterThan(0);
+  });
+
+  test('GET /api/orders — without auth → 401', async ({ request }) => {
+    const res = await request.get('/api/orders');
+    expect(res.status()).toBe(401);
+  });
+
+  test('GET /api/admin — wrong role → 403', async ({ request }) => {
+    // Login as viewer
+    const login = await request.post('/api/auth/login', {
+      data: { email: 'viewer@test.com', password: 'secret' },
+    });
+    const { token } = await login.json();
+    const res = await request.get('/api/admin/users', {
+      headers: { Authorization: \`Bearer \${token}\` },
+    });
+    expect(res.status()).toBe(403);
+  });
+});`}
+              />
+
+              <SnippetBlock
+                title="API Response Schema Validation"
+                language="typescript"
+                code={`import { test, expect } from '@playwright/test';
+
+// Reusable schema validator helper
+function validateSchema(obj: any, schema: Record<string, string>) {
+  for (const [key, type] of Object.entries(schema)) {
+    expect(typeof obj[key], \`\${key} should be \${type}\`).toBe(type);
+  }
+}
+
+test.describe('api-contracts', { tag: ['@api', '@regression'] }, () => {
+  test('GET /api/products — matches schema', async ({ request }) => {
+    const res = await request.get('/api/products');
+    expect(res.status()).toBe(200);
+    const products = await res.json();
+    expect(Array.isArray(products)).toBe(true);
+
+    for (const product of products.slice(0, 5)) {
+      validateSchema(product, {
+        id: 'string',
+        name: 'string',
+        price: 'number',
+        inStock: 'boolean',
+      });
+      expect(product.price).toBeGreaterThan(0);
+    }
+  });
+
+  test('POST /api/orders — validates required fields', async ({ request }) => {
+    const res = await request.post('/api/orders', { data: {} });
+    expect(res.status()).toBe(400);
+    const body = await res.json();
+    expect(body.errors).toContainEqual(
+      expect.objectContaining({ field: 'productId', message: expect.any(String) })
+    );
+  });
+});`}
+              />
+
+              <SnippetBlock
+                title="GraphQL API Testing"
+                language="typescript"
+                code={`import { test, expect } from '@playwright/test';
+
+const GRAPHQL_URL = '/graphql';
+
+test.describe('graphql', { tag: ['@api'] }, () => {
+  test('query users list', async ({ request }) => {
+    const res = await request.post(GRAPHQL_URL, {
+      data: {
+        query: \`
+          query {
+            users(limit: 10) {
+              id
+              name
+              email
+              createdAt
+            }
+          }
+        \`,
+      },
+    });
+    const { data, errors } = await res.json();
+    expect(errors).toBeUndefined();
+    expect(data.users.length).toBeLessThanOrEqual(10);
+    expect(data.users[0]).toHaveProperty('id');
+  });
+
+  test('mutation create post', async ({ request }) => {
+    const res = await request.post(GRAPHQL_URL, {
+      data: {
+        query: \`
+          mutation CreatePost($input: PostInput!) {
+            createPost(input: $input) { id title }
+          }
+        \`,
+        variables: { input: { title: 'Test Post', body: 'Hello' } },
+      },
+    });
+    const { data } = await res.json();
+    expect(data.createPost.title).toBe('Test Post');
+  });
+});`}
+              />
+
+              <SnippetBlock
+                title="Performance & Load Assertions"
+                language="typescript"
+                code={`import { test, expect } from '@playwright/test';
+
+test.describe('api-perf', { tag: ['@api', '@smoke'] }, () => {
+  test('GET /api/health — responds under 500ms', async ({ request }) => {
+    const start = Date.now();
+    const res = await request.get('/api/health');
+    const latency = Date.now() - start;
+
+    expect(res.status()).toBe(200);
+    expect(latency).toBeLessThan(500);
+
+    // Attach latency for dashboard rendering
+    test.info().attach('api-payload', {
+      contentType: 'application/json',
+      body: Buffer.from(JSON.stringify({
+        method: 'GET', url: '/api/health',
+        statusCode: 200, latency,
+        responseBody: await res.json(),
+      })),
+    });
+  });
+
+  test('GET /api/products — pagination works', async ({ request }) => {
+    const res = await request.get('/api/products?page=1&limit=20');
+    const body = await res.json();
+    expect(body.data.length).toBeLessThanOrEqual(20);
+    expect(body.meta).toMatchObject({
+      page: 1,
+      limit: 20,
+      total: expect.any(Number),
+    });
+  });
+});`}
+              />
+            </div>
+
+            {/* Mixed / Integration */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                <span>🔄</span> Integration &amp; E2E Patterns
+              </h3>
+
+              <SnippetBlock
+                title="API Setup → UI Verification (Hybrid Test)"
+                language="typescript"
+                code={`import { test, expect } from '@playwright/test';
+
+test('create item via API, verify in UI', {
+  tag: ['@e2e', '@critical'],
+}, async ({ page, request }) => {
+  // Step 1: Create data via API
+  const res = await request.post('/api/products', {
+    data: { name: 'Widget Pro', price: 29.99, category: 'gadgets' },
+  });
+  const { id } = await res.json();
+
+  // Step 2: Verify it appears in the UI
+  await page.goto('/products');
+  await page.fill('.search-input', 'Widget Pro');
+  await expect(page.locator(\`[data-product-id="\${id}"]\`)).toBeVisible();
+  await expect(page.locator(\`[data-product-id="\${id}"] .price\`))
+    .toHaveText('$29.99');
+
+  // Step 3: Cleanup via API
+  await request.delete(\`/api/products/\${id}\`);
+});`}
+              />
+
+              <SnippetBlock
+                title="Database Seeding with Fixtures"
+                language="typescript"
+                code={`import { test as base, expect } from '@playwright/test';
+
+// Custom fixture that seeds and cleans up test data
+const test = base.extend<{ testUser: { email: string; password: string } }>({
+  testUser: async ({ request }, use) => {
+    // Seed
+    const user = { email: \`test-\${Date.now()}@e2e.com\`, password: 'Test123!' };
+    await request.post('/api/test/seed-user', { data: user });
+
+    // Provide to test
+    await use(user);
+
+    // Cleanup
+    await request.delete('/api/test/cleanup', {
+      data: { email: user.email },
+    });
+  },
+});
+
+test('new user onboarding flow', async ({ page, testUser }) => {
+  await page.goto('/login');
+  await page.fill('#email', testUser.email);
+  await page.fill('#password', testUser.password);
+  await page.click('button[type="submit"]');
+  await expect(page.locator('.onboarding-wizard')).toBeVisible();
+});`}
+              />
+            </div>
+
+            <Tip variant="success" icon="📋">
+              <strong className="text-foreground">Copy &amp; adapt!</strong> All snippets follow Playwright best practices and produce output compatible with this dashboard. Use tags, steps, and structured errors for the best rendering.
+            </Tip>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Code Playground */}
+        <AccordionItem value="playground" className="rounded-lg border bg-card px-4 sm:px-6">
+          <AccordionTrigger className="font-mono text-sm sm:text-base font-semibold text-foreground hover:no-underline py-4">
+            <span className="flex items-center gap-2"><span>🎮</span> Code Playground — Generate Your Config</span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-4 pb-4">
+            <p className="text-sm text-muted-foreground">
+              Configure your test setup and get ready-to-use code. Select your options below and copy the generated output.
+            </p>
+            <PlaygroundGenerator />
+          </AccordionContent>
+        </AccordionItem>
       </Accordion>
+    </div>
+  );
+};
+
+/* ─── Copyable Snippet Block ─── */
+const SnippetBlock = ({ title, code, language = "typescript" }: { title: string; code: string; language?: string }) => {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <div className="rounded-lg border bg-muted/50 overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-2 border-b bg-muted">
+        <span className="text-xs font-mono text-muted-foreground">{title}</span>
+        <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] gap-1" onClick={handleCopy}>
+          {copied ? <><Check className="h-3 w-3" /> Copied</> : <><Copy className="h-3 w-3" /> Copy</>}
+        </Button>
+      </div>
+      <pre className="p-4 text-xs font-mono text-foreground overflow-x-auto whitespace-pre">{code}</pre>
+    </div>
+  );
+};
+
+/* ─── Playground Generator ─── */
+const PlaygroundGenerator = () => {
+  const [testType, setTestType] = useState<"ui" | "api" | "hybrid">("ui");
+  const [usePOM, setUsePOM] = useState(true);
+  const [tags, setTags] = useState(["@smoke"]);
+  const [retries, setRetries] = useState(0);
+  const [browsers, setBrowsers] = useState(["chromium"]);
+  const [baseUrl, setBaseUrl] = useState("http://localhost:3000");
+  const [authSetup, setAuthSetup] = useState(false);
+
+  const tagOptions = ["@smoke", "@critical", "@regression", "@api", "@ui", "@e2e"];
+  const browserOptions = ["chromium", "firefox", "webkit"];
+
+  const toggleItem = (arr: string[], item: string, setter: (v: string[]) => void) => {
+    setter(arr.includes(item) ? arr.filter(t => t !== item) : [...arr, item]);
+  };
+
+  const generateConfig = () => {
+    const projects = browsers.map(b => `    {
+      name: '${b}',
+      use: { ...devices['Desktop ${b === "chromium" ? "Chrome" : b === "firefox" ? "Firefox" : "Safari"}'] },
+    }`).join(",\n");
+
+    return `import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './tests',
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? ${retries} : 0,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: [
+    ['json', { outputFile: 'results.json' }],
+    ['html', { open: 'never' }],
+  ],
+  use: {
+    baseURL: '${baseUrl}',
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+  },
+  projects: [
+${projects}
+  ],
+});`;
+  };
+
+  const generateTest = () => {
+    const tagStr = tags.length ? `{ tag: [${tags.map(t => `'${t}'`).join(", ")}] }, ` : "";
+
+    if (testType === "api") {
+      return `import { test, expect } from '@playwright/test';
+${authSetup ? `
+let token: string;
+
+test.beforeAll(async ({ request }) => {
+  const res = await request.post('/api/auth/login', {
+    data: { email: 'test@example.com', password: 'password' },
+  });
+  const body = await res.json();
+  token = body.token;
+});
+` : ""}
+test.describe('api-tests', () => {
+  test('GET /api/resource', ${tagStr}async ({ request }) => {
+    const res = await request.get('/api/resource'${authSetup ? `, {
+      headers: { Authorization: \`Bearer \${token}\` },
+    }` : ""});
+    expect(res.status()).toBe(200);
+    const body = await res.json();
+    expect(Array.isArray(body)).toBe(true);
+  });
+
+  test('POST /api/resource', ${tagStr}async ({ request }) => {
+    const res = await request.post('/api/resource', {
+      ${authSetup ? `headers: { Authorization: \`Bearer \${token}\` },\n      ` : ""}data: { name: 'Test Item', value: 42 },
+    });
+    expect(res.status()).toBe(201);
+    const body = await res.json();
+    expect(body).toHaveProperty('id');
+  });
+});`;
+    }
+
+    if (testType === "hybrid") {
+      return `import { test, expect } from '@playwright/test';
+
+test.describe('e2e-flow', () => {
+  test('create via API → verify in UI', ${tagStr}async ({ page, request }) => {
+    // Create test data via API
+    const res = await request.post('/api/items', {
+      data: { name: 'E2E Widget', price: 19.99 },
+    });
+    const { id } = await res.json();
+
+    // Navigate and verify in UI
+    await page.goto('/items');
+    await expect(page.locator(\`[data-id="\${id}"]\`)).toBeVisible();
+    await expect(page.locator(\`[data-id="\${id}"] .name\`)).toHaveText('E2E Widget');
+
+    // Cleanup
+    await request.delete(\`/api/items/\${id}\`);
+  });
+});`;
+    }
+
+    // UI test
+    if (usePOM) {
+      return `import { test, expect } from '@playwright/test';
+
+// --- Page Object ---
+class ExamplePage {
+  constructor(private page: import('@playwright/test').Page) {}
+
+  readonly heading = this.page.locator('h1');
+  readonly searchInput = this.page.locator('[placeholder="Search..."]');
+  readonly results = this.page.locator('.result-item');
+
+  async goto() {
+    await this.page.goto('/');
+  }
+
+  async search(query: string) {
+    await this.searchInput.fill(query);
+    await this.searchInput.press('Enter');
+  }
+}
+
+// --- Tests ---
+test.describe('example-suite', () => {
+  test('page loads', ${tagStr}async ({ page }) => {
+    const examplePage = new ExamplePage(page);
+    await examplePage.goto();
+    await expect(examplePage.heading).toBeVisible();
+  });
+
+  test('search works', ${tagStr}async ({ page }) => {
+    const examplePage = new ExamplePage(page);
+    await examplePage.goto();
+    await examplePage.search('test query');
+    await expect(examplePage.results.first()).toBeVisible();
+  });
+});`;
+    }
+
+    return `import { test, expect } from '@playwright/test';
+
+test.describe('example-suite', () => {
+  test('page loads correctly', ${tagStr}async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('h1')).toBeVisible();
+  });
+
+  test('navigation works', ${tagStr}async ({ page }) => {
+    await page.goto('/');
+    await page.click('nav a:has-text("About")');
+    await expect(page).toHaveURL('/about');
+    await expect(page.locator('h1')).toContainText('About');
+  });
+
+  test('form submission', ${tagStr}async ({ page }) => {
+    await page.goto('/contact');
+    await page.fill('#name', 'Test User');
+    await page.fill('#email', 'test@example.com');
+    await page.fill('#message', 'Hello from Playwright');
+    await page.click('button[type="submit"]');
+    await expect(page.locator('.success-toast')).toBeVisible();
+  });
+});`;
+  };
+
+  const chipClass = (active: boolean) =>
+    `px-2.5 py-1 rounded-md text-xs font-mono cursor-pointer transition-colors border ${
+      active
+        ? "bg-primary text-primary-foreground border-primary"
+        : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
+    }`;
+
+  return (
+    <div className="space-y-5">
+      {/* Options */}
+      <div className="grid grid-cols-1 gap-4">
+        {/* Test Type */}
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Test Type</label>
+          <div className="flex flex-wrap gap-2">
+            {(["ui", "api", "hybrid"] as const).map(t => (
+              <button key={t} onClick={() => setTestType(t)} className={chipClass(testType === t)}>
+                {t === "ui" ? "🖥️ UI" : t === "api" ? "🔗 API" : "🔄 Hybrid"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tags */}
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Tags</label>
+          <div className="flex flex-wrap gap-2">
+            {tagOptions.map(tag => (
+              <button key={tag} onClick={() => toggleItem(tags, tag, setTags)} className={chipClass(tags.includes(tag))}>
+                {tag}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Browsers */}
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Browsers</label>
+          <div className="flex flex-wrap gap-2">
+            {browserOptions.map(b => (
+              <button key={b} onClick={() => toggleItem(browsers, b, setBrowsers)} className={chipClass(browsers.includes(b))}>
+                {b}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Options Row */}
+        <div className="flex flex-wrap gap-4 items-center">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Base URL</label>
+            <input
+              type="text"
+              value={baseUrl}
+              onChange={e => setBaseUrl(e.target.value)}
+              className="block w-48 px-2 py-1 text-xs font-mono rounded border bg-muted/50 text-foreground"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">CI Retries</label>
+            <input
+              type="number"
+              min={0}
+              max={5}
+              value={retries}
+              onChange={e => setRetries(Number(e.target.value))}
+              className="block w-16 px-2 py-1 text-xs font-mono rounded border bg-muted/50 text-foreground"
+            />
+          </div>
+          {testType === "ui" && (
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Page Object</label>
+              <button onClick={() => setUsePOM(!usePOM)} className={chipClass(usePOM)}>
+                {usePOM ? "✓ Enabled" : "Disabled"}
+              </button>
+            </div>
+          )}
+          {testType === "api" && (
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Auth Setup</label>
+              <button onClick={() => setAuthSetup(!authSetup)} className={chipClass(authSetup)}>
+                {authSetup ? "✓ Enabled" : "Disabled"}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Generated Config */}
+      <div className="space-y-3">
+        <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">📦 Generated playwright.config.ts</h3>
+        <SnippetBlock title="playwright.config.ts" code={generateConfig()} />
+      </div>
+
+      {/* Generated Test */}
+      <div className="space-y-3">
+        <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">🧪 Generated Test File</h3>
+        <SnippetBlock title={`tests/example.spec.ts`} code={generateTest()} />
+      </div>
+
+      <Tip variant="success" icon="🎮">
+        <strong className="text-foreground">Interactive!</strong> Change any option above and the code updates instantly. Copy the output and drop it into your project.
+      </Tip>
     </div>
   );
 };
