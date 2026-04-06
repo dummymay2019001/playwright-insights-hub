@@ -218,7 +218,7 @@ const SuiteExportPage = () => {
           </div>
         </div>
 
-        <div ref={previewRef} className="flex-1 overflow-y-auto bg-muted/30 p-4 sm:p-6">
+        <div ref={previewRef} className="flex-1 lg:overflow-y-auto bg-muted/30 p-4 sm:p-6">
           {previewState === "none" ? (
             <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
               <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">
