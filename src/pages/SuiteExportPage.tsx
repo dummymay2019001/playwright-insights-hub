@@ -163,7 +163,7 @@ const SuiteExportPage = () => {
   const buttonVariant = previewState === "current" ? "default" : previewState === "stale" ? "outline" : "default";
 
   return (
-    <div className="flex flex-col h-[calc(100vh-3.5rem)]">
+    <div className="flex flex-col lg:h-[calc(100vh-3.5rem)]">
       {/* Top bar */}
       <div className="border-b bg-card px-4 py-2.5 flex items-center gap-3 shrink-0">
         <Button variant="ghost" size="sm" className="font-mono text-xs" onClick={() => navigate(`/suite/${encodeURIComponent(decodedName)}`)}>
