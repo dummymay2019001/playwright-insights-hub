@@ -142,6 +142,15 @@ export function buildSuiteReportData(
     }))
     .sort((a, b) => b.count - a.count);
 
+  // Cross-run per-test status
+  const crossRunStatus = new Map<string, Map<string, string>>();
+  for (const run of sorted) {
+    for (const t of run.results.filter((t) => t.suite === suiteName)) {
+      if (!crossRunStatus.has(t.name)) crossRunStatus.set(t.name, new Map());
+      crossRunStatus.get(t.name)!.set(run.manifest.runId, t.status);
+    }
+  }
+
   // Latest results
   const latestRun = sorted[sorted.length - 1];
   const latestResults = latestRun ? latestRun.results.filter((t) => t.suite === suiteName) : [];
@@ -168,6 +177,7 @@ export function buildSuiteReportData(
     perfectRuns,
     avgPassRate,
     trend,
+    crossRunStatus,
     history,
     flakyTests,
     failurePatterns,
