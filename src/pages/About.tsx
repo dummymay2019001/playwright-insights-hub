@@ -11,7 +11,7 @@ const features = [
   {
     icon: "🔍",
     title: "Deep Run Inspection",
-    desc: "Drill into any run — suite breakdowns, tag filters, error traces, and API payloads at a glance.",
+    desc: "Drill into any run — suite breakdowns, tag filters, error traces, test steps, and API payloads at a glance.",
     color: "from-success/20 to-success/5",
   },
   {
@@ -27,30 +27,66 @@ const features = [
     color: "from-destructive/20 to-destructive/5",
   },
   {
-    icon: "🏷️",
-    title: "Tag-Based Filtering",
-    desc: "Slice your suite by @smoke, @critical, @regression — see pass rates per tag instantly.",
+    icon: "🐛",
+    title: "Defect Classification",
+    desc: "Every failure is auto-categorized as Product Defect, Test Defect, or Infrastructure — so you know what to fix and who owns it.",
     color: "from-accent to-accent/30",
   },
   {
-    icon: "📄",
-    title: "Enterprise PDF Export",
-    desc: "Customizable stakeholder reports with branding, notes, custom variables, and live preview.",
+    icon: "🎯",
+    title: "Severity & Priority",
+    desc: "5-level severity (Blocker → Trivial) auto-inferred from tags and error types. Triage at a glance.",
     color: "from-primary/15 to-accent",
+  },
+  {
+    icon: "📝",
+    title: "Test Steps Breakdown",
+    desc: "See exactly where a test failed with step-by-step execution traces from Playwright's test.step() API.",
+    color: "from-success/15 to-success/5",
+  },
+  {
+    icon: "🌐",
+    title: "Environment Comparison",
+    desc: "Compare test results across staging, production, and other environments. Spot env-specific failures instantly.",
+    color: "from-warning/15 to-warning/5",
+  },
+  {
+    icon: "📄",
+    title: "Run & Suite Reports",
+    desc: "Two distinct PDF exports — Run Reports for CI snapshots, Suite Reports for stability trends and flakiness over time.",
+    color: "from-primary/20 to-primary/5",
+  },
+  {
+    icon: "🏷️",
+    title: "Tag-Based Filtering",
+    desc: "Slice your suite by @smoke, @critical, @regression — see pass rates per tag instantly.",
+    color: "from-destructive/15 to-destructive/5",
+  },
+  {
+    icon: "🔄",
+    title: "ADO & Jira Integration",
+    desc: "Push test results to Azure DevOps Test Plans or auto-create Jira bugs for failures — individual tests or full suites.",
+    color: "from-accent to-accent/30",
+  },
+  {
+    icon: "🎮",
+    title: "Code Playground",
+    desc: "Interactive config generator — pick your test type, browsers, tags, and get ready-to-use Playwright code instantly.",
+    color: "from-primary/15 to-success/10",
   },
 ];
 
 const principles = [
-  { num: "01", title: "Zero Backend", text: "No database. No server. Runs entirely from local JSON files." },
+  { num: "01", title: "Zero Backend", text: "No database. No server. Runs entirely from local JSON files in your browser." },
   { num: "02", title: "Privacy First", text: "Your test data never leaves your machine. Period." },
-  { num: "03", title: "Instant Setup", text: "npm install, npm run dev — you're analyzing tests in under 60 seconds." },
-  { num: "04", title: "Team Ready", text: "Export polished PDF reports that stakeholders actually want to read." },
+  { num: "03", title: "Instant Setup", text: "Drag-and-drop your results.json — you're analyzing tests in under 60 seconds." },
+  { num: "04", title: "Team Ready", text: "Export polished PDF reports tailored for different audiences — engineers and stakeholders." },
 ];
 
 const stats = [
   { value: "0", unit: "backends", label: "required" },
   { value: "<60s", unit: "", label: "to first insight" },
-  { value: "∞", unit: "runs", label: "supported" },
+  { value: "12+", unit: "", label: "capabilities" },
   { value: "100%", unit: "", label: "local & private" },
 ];
 
@@ -79,10 +115,10 @@ const AboutPage = () => {
               </span>
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
-              Playwright Intelligence is not another report viewer. It's an analytics dashboard that helps teams understand 
+              Playwright Intelligence is not another report viewer. It's an analytics dashboard that helps teams understand
               <em> why</em> tests fail, <em>when</em> they started failing, and <em>what</em> to fix first.
             </p>
-            <div className="flex items-center justify-center gap-3 pt-2">
+            <div className="flex items-center justify-center gap-3 pt-2 flex-wrap">
               <Button size="lg" className="font-mono text-sm px-6" onClick={() => navigate("/")}>
                 → Open Dashboard
               </Button>
@@ -115,19 +151,19 @@ const AboutPage = () => {
         <div className="max-w-2xl mx-auto space-y-6">
           <h2 className="font-mono text-xs text-muted-foreground uppercase tracking-widest">The Problem</h2>
           <p className="text-xl sm:text-2xl text-foreground font-medium leading-relaxed">
-            "Our tests are flaky." "Which tests broke?" "How long has this been failing?"
+            "Our tests are flaky." "Which tests broke?" "Is this a product bug or a test bug?"
           </p>
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-            Every engineering team asks these questions — usually after a broken release. CI produces raw logs and exit codes. 
+            Every engineering team asks these questions — usually after a broken release. CI produces raw logs and exit codes.
             You get a wall of green and red. But no one tells you the <em>story</em> behind your test suite.
           </p>
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-            Which tests just started failing? Which ones have been flaky for weeks? Is your test duration creeping up? 
-            Are your @critical tests passing but your @regression suite slowly degrading?
+            Which tests just started failing? Which ones have been flaky for weeks? Is it a timeout (infrastructure), a selector change (test defect),
+            or an actual broken feature (product bug)? Are your @critical tests passing while your @regression suite slowly degrades?
           </p>
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-            Playwright Intelligence reads your test results, connects the dots across runs, and surfaces 
-            the insights your team actually needs. No setup. No servers. No data leaving your machine.
+            Playwright Intelligence reads your test results, classifies failures by root cause, tracks stability across runs,
+            and surfaces the insights your team actually needs. No setup. No servers. No data leaving your machine.
           </p>
         </div>
       </section>
@@ -162,9 +198,9 @@ const AboutPage = () => {
         <div className="max-w-3xl mx-auto">
           <div className="space-y-0">
             {[
-              { step: "1", title: "Run your Playwright tests", desc: "Use the built-in JSON reporter or our custom reporter to output structured results.", code: "npx playwright test --reporter=json" },
-              { step: "2", title: "Drop results into the folder", desc: "Place your results.json files in the runs directory — one folder per run.", code: "runs/\n  ├── 2026-04-01/results.json\n  ├── 2026-04-02/results.json\n  └── 2026-04-03/results.json" },
-              { step: "3", title: "Launch the dashboard", desc: "One command. Instant insights. No database, no backend, no configuration.", code: "npm run dev" },
+              { step: "1", title: "Run your Playwright tests", desc: "Use the built-in JSON reporter — no custom reporter needed.", code: "npx playwright test --reporter=json > results.json" },
+              { step: "2", title: "Drag & drop into the dashboard", desc: "Drop your results.json onto the dashboard — single files, multi-run arrays, or entire folders. Native Playwright format is auto-detected.", code: "# Or import via file picker\n# Supports: single run, multi-run array,\n# folder with manifest, flat results" },
+              { step: "3", title: "Get instant intelligence", desc: "See pass rates, failure root causes, flaky tests, severity breakdowns, suite stability, and exportable reports — all in one place.", code: "✅ Defect classification\n🎯 Severity auto-inference\n📊 Cross-run trends\n📄 Run & Suite PDF reports" },
             ].map((item, i) => (
               <div key={item.step} className="flex gap-4 sm:gap-6">
                 <div className="flex flex-col items-center">
@@ -207,14 +243,14 @@ const AboutPage = () => {
         </div>
       </section>
 
-      {/* API test showcase */}
+      {/* Showcase — Defect Classification */}
       <section className="container py-16 sm:py-20">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-10">
             <h2 className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-3">Deep Visibility</h2>
             <p className="text-2xl sm:text-3xl font-bold text-foreground">See everything. Miss nothing.</p>
             <p className="text-sm text-muted-foreground mt-3 max-w-lg mx-auto">
-              From high-level health gauges to API request/response payloads — every layer of your test suite is visible and filterable.
+              From defect classification to API payloads, test steps to environment comparison — every layer of your test suite is visible.
             </p>
           </div>
           <div className="rounded-xl border bg-card overflow-hidden shadow-sm">
@@ -224,56 +260,59 @@ const AboutPage = () => {
                 <div className="w-3 h-3 rounded-full bg-warning/40" />
                 <div className="w-3 h-3 rounded-full bg-success/40" />
               </div>
-              <span className="font-mono text-[10px] text-muted-foreground ml-2">Run Detail — api suite</span>
+              <span className="font-mono text-[10px] text-muted-foreground ml-2">Test Detail — checkout &gt; payment flow</span>
             </div>
             <div className="p-4 sm:p-5 space-y-3">
-              {/* Mock test row */}
-              <div className="rounded-md border p-3">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-success" />
-                  <span className="font-mono text-xs text-foreground flex-1">api &gt; POST /orders</span>
-                  <span className="font-mono text-[10px] px-1.5 py-0.5 rounded border bg-primary/10 text-primary">API</span>
-                  <span className="font-mono text-[10px] text-muted-foreground">342ms</span>
-                </div>
-                <div className="mt-3 rounded border bg-muted/30 p-3 space-y-2">
-                  <div className="flex items-center gap-2 font-mono text-xs">
-                    <span className="px-1.5 py-0.5 rounded border text-[10px] font-bold">POST</span>
-                    <span className="text-foreground">/api/v1/orders</span>
-                    <span className="text-success font-bold">201</span>
-                    <span className="text-muted-foreground text-[10px]">230ms</span>
+              {/* Severity + Defect Category */}
+              <div className="flex flex-wrap gap-2">
+                <span className="font-mono text-[10px] px-2 py-1 rounded-md border bg-destructive/10 text-destructive border-destructive/20">🔴 Blocker</span>
+                <span className="font-mono text-[10px] px-2 py-1 rounded-md border bg-warning/10 text-warning border-warning/20">🐛 Product Defect</span>
+                <span className="font-mono text-[10px] px-2 py-1 rounded-md border bg-primary/10 text-primary border-primary/20">@critical</span>
+                <span className="font-mono text-[10px] px-2 py-1 rounded-md border bg-primary/10 text-primary border-primary/20">@regression</span>
+              </div>
+              {/* Steps */}
+              <div className="rounded-md border p-3 space-y-1 font-mono text-[11px]">
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Test Steps</div>
+                {[
+                  { icon: "✓", cls: "text-success", name: "Navigate to checkout", time: "245ms" },
+                  { icon: "✓", cls: "text-success", name: "Fill shipping details", time: "180ms" },
+                  { icon: "✓", cls: "text-success", name: "Select payment method", time: "95ms" },
+                  { icon: "✗", cls: "text-destructive", name: "Complete payment", time: "5002ms" },
+                ].map(s => (
+                  <div key={s.name} className="flex items-center gap-2 py-0.5">
+                    <span className={`${s.cls} font-bold`}>{s.icon}</span>
+                    <span className="text-foreground flex-1">{s.name}</span>
+                    <span className="text-muted-foreground">{s.time}</span>
                   </div>
-                  <div className="grid sm:grid-cols-2 gap-2 text-[10px] font-mono">
-                    <div>
-                      <span className="text-primary">▸ Request Body</span>
-                      <pre className="mt-1 bg-muted/60 rounded p-2 text-foreground">{`{
-  "productId": "sku-123",
-  "quantity": 2,
-  "coupon": "SAVE10"
-}`}</pre>
-                    </div>
-                    <div>
-                      <span className="text-primary">▸ Response Body</span>
-                      <pre className="mt-1 bg-muted/60 rounded p-2 text-foreground">{`{
+                ))}
+                <div className="text-destructive/70 text-[10px] ml-4 mt-1">TimeoutError: Payment gateway timeout 5000ms exceeded</div>
+              </div>
+              {/* API payload */}
+              <div className="rounded-md border bg-muted/30 p-3 space-y-2">
+                <div className="flex items-center gap-2 font-mono text-xs">
+                  <span className="px-1.5 py-0.5 rounded border text-[10px] font-bold">POST</span>
+                  <span className="text-foreground">/api/v1/payments</span>
+                  <span className="text-destructive font-bold">504</span>
+                  <span className="text-muted-foreground text-[10px]">5002ms</span>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-2 text-[10px] font-mono">
+                  <div>
+                    <span className="text-primary">▸ Request</span>
+                    <pre className="mt-1 bg-muted/60 rounded p-2 text-foreground">{`{
   "orderId": "ord-9876",
-  "status": "confirmed",
-  "total": 89.99
+  "amount": 89.99,
+  "method": "card"
 }`}</pre>
-                    </div>
+                  </div>
+                  <div>
+                    <span className="text-primary">▸ Response</span>
+                    <pre className="mt-1 bg-muted/60 rounded p-2 text-destructive/70">{`{
+  "error": "Gateway Timeout",
+  "retryAfter": 30
+}`}</pre>
                   </div>
                 </div>
               </div>
-              {/* Mock mini rows */}
-              {[
-                { status: "bg-success", name: "api > GET /users", ms: "128ms" },
-                { status: "bg-destructive", name: "api > rate limiting", ms: "502ms" },
-                { status: "bg-success", name: "api > PUT /settings", ms: "89ms" },
-              ].map((r) => (
-                <div key={r.name} className="flex items-center gap-2 rounded-md border p-2.5">
-                  <span className={`w-2 h-2 rounded-full ${r.status}`} />
-                  <span className="font-mono text-xs text-foreground flex-1">{r.name}</span>
-                  <span className="font-mono text-[10px] text-muted-foreground">{r.ms}</span>
-                </div>
-              ))}
             </div>
           </div>
         </div>
@@ -290,7 +329,7 @@ const AboutPage = () => {
             <p className="text-sm text-muted-foreground">
               Start analyzing your Playwright results in under 60 seconds. No signup required.
             </p>
-            <div className="flex items-center justify-center gap-3 pt-2">
+            <div className="flex items-center justify-center gap-3 pt-2 flex-wrap">
               <Button size="lg" className="font-mono text-sm px-6" onClick={() => navigate("/")}>
                 → Launch Dashboard
               </Button>
@@ -299,7 +338,7 @@ const AboutPage = () => {
               </Button>
             </div>
             <p className="font-mono text-[10px] text-muted-foreground pt-4">
-              npm install · npm run dev · done
+              Drop your results.json · instant insights · done
             </p>
           </div>
         </div>
