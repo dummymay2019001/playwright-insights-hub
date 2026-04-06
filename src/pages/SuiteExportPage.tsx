@@ -163,7 +163,7 @@ const SuiteExportPage = () => {
   const buttonVariant = previewState === "current" ? "default" : previewState === "stale" ? "outline" : "default";
 
   return (
-    <div className="flex flex-col h-[calc(100vh-3.5rem)]">
+    <div className="flex flex-col lg:h-[calc(100vh-3.5rem)]">
       {/* Top bar */}
       <div className="border-b bg-card px-4 py-2.5 flex items-center gap-3 shrink-0">
         <Button variant="ghost" size="sm" className="font-mono text-xs" onClick={() => navigate(`/suite/${encodeURIComponent(decodedName)}`)}>
@@ -211,14 +211,14 @@ const SuiteExportPage = () => {
       </div>
 
       {/* Split layout */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        <div className="lg:w-[360px] xl:w-[400px] shrink-0 border-r overflow-y-auto bg-card">
+      <div className="flex-1 flex flex-col lg:flex-row lg:overflow-hidden">
+        <div className="lg:w-[360px] xl:w-[400px] shrink-0 border-r lg:overflow-y-auto bg-card">
           <div className="p-4">
             <ExportSettingsPanel options={options} onChange={handleOptionsChange} />
           </div>
         </div>
 
-        <div ref={previewRef} className="flex-1 overflow-y-auto bg-muted/30 p-4 sm:p-6">
+        <div ref={previewRef} className="flex-1 lg:overflow-y-auto bg-muted/30 p-4 sm:p-6">
           {previewState === "none" ? (
             <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
               <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">
