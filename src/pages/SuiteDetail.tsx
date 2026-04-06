@@ -176,7 +176,12 @@ const SuiteDetailPage = () => {
                 )}
               </div>
             </div>
-            {stats && <HealthGauge score={stats.avgPassRate} label="Avg Pass Rate" size="lg" />}
+            <div className="flex items-center gap-3">
+              {stats && <HealthGauge score={stats.avgPassRate} label="Avg Pass Rate" size="lg" />}
+              <Button variant="outline" size="sm" className="font-mono text-xs h-8" onClick={() => navigate(`/export/suite/${encodeURIComponent(decodedName)}`)}>
+                📄 Export Report
+              </Button>
+            </div>
           </div>
         </div>
       </div>
