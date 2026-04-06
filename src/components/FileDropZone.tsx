@@ -2,6 +2,8 @@ import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ingestFiles, IngestionResult } from "@/services/fileIngestion";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 interface FileDropZoneProps {
   onImport: (result: IngestionResult) => void;
@@ -11,19 +13,61 @@ interface FileDropZoneProps {
 export function FileDropZone({ onImport, compact = false }: FileDropZoneProps) {
   const [dragging, setDragging] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [lastResult, setLastResult] = useState<IngestionResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
 
   const handleFiles = useCallback(async (files: FileList | File[]) => {
     setProcessing(true);
-    setLastResult(null);
+    const fileCount = files.length;
+    const toastId = toast.loading(`Processing ${fileCount} file${fileCount !== 1 ? "s" : ""}…`, {
+      description: "Parsing and validating test results",
+    });
+
     try {
       const result = await ingestFiles(files);
-      setLastResult(result);
+
       if (result.runs.length > 0) {
         onImport(result);
+        const totalTests = result.runs.reduce((s, r) => s + r.results.length, 0);
+        toast.success(
+          `Imported ${result.runs.length} run${result.runs.length !== 1 ? "s" : ""} successfully`,
+          {
+            id: toastId,
+            description: `${totalTests.toLocaleString()} tests across ${result.runs.length} run${result.runs.length !== 1 ? "s" : ""}`,
+            duration: 4000,
+          }
+        );
       }
+
+      if (result.errors.length > 0 && result.runs.length === 0) {
+        toast.error(`Import failed — ${result.errors.length} error${result.errors.length !== 1 ? "s" : ""}`, {
+          id: toastId,
+          description: result.errors.map(e => `${e.file}: ${e.message}`).join("\n"),
+          duration: 6000,
+        });
+      } else if (result.errors.length > 0) {
+        toast.warning(
+          `Imported with ${result.errors.length} warning${result.errors.length !== 1 ? "s" : ""}`,
+          {
+            description: result.errors.map(e => `${e.file}: ${e.message}`).join("\n"),
+            duration: 5000,
+          }
+        );
+      }
+
+      if (result.runs.length === 0 && result.errors.length === 0) {
+        toast.error("No test runs found", {
+          id: toastId,
+          description: "The file(s) didn't contain any recognizable test data",
+          duration: 5000,
+        });
+      }
+    } catch (err) {
+      toast.error("Import failed", {
+        id: toastId,
+        description: err instanceof Error ? err.message : "An unexpected error occurred",
+        duration: 6000,
+      });
     } finally {
       setProcessing(false);
     }
@@ -48,15 +92,13 @@ export function FileDropZone({ onImport, compact = false }: FileDropZoneProps) {
     return (
       <div className="flex items-center gap-2">
         <input ref={fileInputRef} type="file" accept=".json" multiple className="hidden" onChange={(e) => e.target.files && handleFiles(e.target.files)} />
-        <Button variant="outline" size="sm" className="font-mono text-xs" onClick={() => fileInputRef.current?.click()} disabled={processing}>
-          {processing ? "⏳ Processing…" : "📂 Import JSON"}
+        <Button variant="outline" size="sm" className="font-mono text-xs gap-1.5" onClick={() => fileInputRef.current?.click()} disabled={processing}>
+          {processing ? (
+            <><Loader2 className="h-3 w-3 animate-spin" /> Importing…</>
+          ) : (
+            "📂 Import JSON"
+          )}
         </Button>
-        {lastResult && (
-          <span className="text-[10px] font-mono text-muted-foreground">
-            {lastResult.runs.length} run{lastResult.runs.length !== 1 ? "s" : ""} imported
-            {lastResult.errors.length > 0 && ` · ${lastResult.errors.length} error${lastResult.errors.length !== 1 ? "s" : ""}`}
-          </span>
-        )}
       </div>
     );
   }
@@ -70,16 +112,23 @@ export function FileDropZone({ onImport, compact = false }: FileDropZoneProps) {
         className={`
           relative rounded-xl border-2 border-dashed transition-all duration-200
           ${dragging ? "border-primary bg-primary/5 scale-[1.01]" : "border-muted-foreground/20 hover:border-muted-foreground/40"}
-          ${compact ? "p-4" : "p-6 sm:p-10"}
+          p-6 sm:p-10
         `}
       >
         <div className="flex flex-col items-center text-center gap-3">
-          <div className={`rounded-2xl bg-muted/50 flex items-center justify-center ${compact ? "w-10 h-10" : "w-16 h-16"}`}>
-            <span className={compact ? "text-xl" : "text-3xl"}>{processing ? "⏳" : dragging ? "📥" : "📂"}</span>
+          <div className="rounded-2xl bg-muted/50 flex items-center justify-center w-16 h-16">
+            {processing ? (
+              <Loader2 className="h-8 w-8 text-primary animate-spin" />
+            ) : (
+              <span className="text-3xl">{dragging ? "📥" : "📂"}</span>
+            )}
           </div>
 
           {processing ? (
-            <p className="font-mono text-sm text-muted-foreground animate-pulse">Processing files…</p>
+            <div className="space-y-1">
+              <p className="font-mono text-sm font-medium text-foreground">Importing test results…</p>
+              <p className="text-xs text-muted-foreground animate-pulse">Parsing and validating files</p>
+            </div>
           ) : (
             <>
               <div>
@@ -114,33 +163,6 @@ export function FileDropZone({ onImport, compact = false }: FileDropZoneProps) {
           )}
         </div>
       </div>
-
-      {/* Result feedback */}
-      {lastResult && (
-        <div className={`rounded-lg border p-3 space-y-2 ${lastResult.errors.length > 0 && lastResult.runs.length === 0 ? "border-destructive/30 bg-destructive/5" : "border-success/30 bg-success/5"}`}>
-          {lastResult.runs.length > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm">✅</span>
-              <p className="font-mono text-xs text-foreground">
-                Successfully imported <strong>{lastResult.runs.length}</strong> run{lastResult.runs.length !== 1 ? "s" : ""} with{" "}
-                <strong>{lastResult.runs.reduce((s, r) => s + r.results.length, 0)}</strong> total tests
-              </p>
-            </div>
-          )}
-          {lastResult.errors.length > 0 && (
-            <div className="space-y-1">
-              {lastResult.errors.map((err, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <span className="text-xs">⚠️</span>
-                  <p className="font-mono text-[10px] text-destructive">
-                    <strong>{err.file}:</strong> {err.message}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
