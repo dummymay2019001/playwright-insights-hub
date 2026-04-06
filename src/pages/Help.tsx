@@ -720,6 +720,111 @@ test.describe('auth', () => {
 });`}</CodeBlock>
           </AccordionContent>
         </AccordionItem>
+
+        {/* Run vs Suite Reports */}
+        <AccordionItem value="reports" className="rounded-lg border bg-card px-4 sm:px-6">
+          <AccordionTrigger className="font-mono text-sm sm:text-base font-semibold text-foreground hover:no-underline py-4">
+            <span className="flex items-center gap-2"><span>📄</span> Run Reports vs Suite Reports</span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-4 pb-4">
+            <p className="text-sm text-muted-foreground">
+              The dashboard offers two distinct export types, each designed for a different audience and purpose.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="rounded-lg border p-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">📋</span>
+                  <h3 className="text-sm font-semibold text-foreground">Run Report</h3>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  A <strong className="text-foreground">snapshot of a single CI execution</strong> — what happened in one test run.
+                </p>
+                <div className="space-y-1 text-[10px] text-muted-foreground">
+                  <p>✓ Summary stats (pass/fail/skip counts)</p>
+                  <p>✓ Suite breakdown across all suites</p>
+                  <p>✓ Tag summary &amp; duration analysis</p>
+                  <p>✓ Full test results list with errors</p>
+                  <p>✓ Custom metadata overrides</p>
+                </div>
+                <div className="rounded bg-muted/50 p-2 text-[10px] text-muted-foreground">
+                  <strong className="text-foreground">Best for:</strong> CI/CD reports, release sign-offs, sharing a specific build's results with stakeholders.
+                </div>
+              </div>
+
+              <div className="rounded-lg border p-4 space-y-2 border-primary/30">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">📂</span>
+                  <h3 className="text-sm font-semibold text-foreground">Suite Report</h3>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  A <strong className="text-foreground">stability story across multiple runs</strong> — how a suite performs over time.
+                </p>
+                <div className="space-y-1 text-[10px] text-muted-foreground">
+                  <p>🛡️ Stability score &amp; visual heatmap</p>
+                  <p>📈 Pass rate trend across runs</p>
+                  <p>🔀 Cross-run test comparison matrix</p>
+                  <p>⚡ Flaky tests with flake rates</p>
+                  <p>🔍 Failure pattern analysis</p>
+                </div>
+                <div className="rounded bg-primary/5 p-2 text-[10px] text-muted-foreground">
+                  <strong className="text-foreground">Best for:</strong> Sprint reviews, quality health checks, identifying chronic flakiness, tracking suite stability over time.
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-lg border overflow-hidden">
+              <div className="px-4 py-2 bg-muted border-b text-xs font-mono text-muted-foreground">Quick Comparison</div>
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-muted/50">
+                    <th className="text-left px-3 py-2 text-muted-foreground font-medium">Feature</th>
+                    <th className="text-center px-3 py-2 text-muted-foreground font-medium">Run Report</th>
+                    <th className="text-center px-3 py-2 text-muted-foreground font-medium">Suite Report</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y font-mono">
+                  {[
+                    ["Data scope", "Single run", "Multiple runs"],
+                    ["Stability score", "—", "✓"],
+                    ["Pass rate trend", "—", "✓"],
+                    ["Cross-run comparison", "—", "✓"],
+                    ["Flaky test detection", "—", "✓"],
+                    ["Failure patterns", "—", "✓"],
+                    ["Suite breakdown", "✓", "—"],
+                    ["Full test list", "✓", "Latest run"],
+                    ["Tag summary", "✓", "✓"],
+                    ["Duration analysis", "✓", "✓"],
+                    ["Custom metadata", "✓", "✓"],
+                    ["Scope control", "Fixed (1 run)", "All / Last 5 / Last 10"],
+                  ].map(([feature, run, suite]) => (
+                    <tr key={feature} className="hover:bg-muted/30">
+                      <td className="px-3 py-1.5 text-foreground font-sans">{feature}</td>
+                      <td className="px-3 py-1.5 text-center">{run === "✓" ? <span className="text-success">✓</span> : run === "—" ? <span className="text-muted-foreground">—</span> : <span className="text-muted-foreground">{run}</span>}</td>
+                      <td className="px-3 py-1.5 text-center">{suite === "✓" ? <span className="text-success">✓</span> : suite === "—" ? <span className="text-muted-foreground">—</span> : <span className="text-muted-foreground">{suite}</span>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">How to Export</h3>
+              <div className="space-y-1.5 text-xs text-muted-foreground">
+                <p>
+                  <strong className="text-foreground">Run Report:</strong> Navigate to a run's detail page → click <code className="font-mono bg-muted px-1 rounded">📄 Export Report</code> in the header.
+                </p>
+                <p>
+                  <strong className="text-foreground">Suite Report:</strong> Navigate to a suite's detail page → click <code className="font-mono bg-muted px-1 rounded">📄 Export Report</code> in the header.
+                </p>
+              </div>
+            </div>
+
+            <Tip variant="success" icon="💡">
+              <strong className="text-foreground">When to use which:</strong> Use a <strong>Run Report</strong> to answer "what happened in this build?" Use a <strong>Suite Report</strong> to answer "how healthy is this test suite over time?"
+            </Tip>
+          </AccordionContent>
+        </AccordionItem>
       </Accordion>
     </div>
   );
