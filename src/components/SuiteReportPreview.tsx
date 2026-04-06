@@ -332,21 +332,8 @@ export function SuiteReportPreview({ data, options }: Props) {
 
 function CrossRunTable({ data, cm }: { data: SuiteReportData; cm: string }) {
   const recentRuns = [...data.history].reverse().slice(0, 5);
-  // Build test → run → status map
-  const allTests = new Set<string>();
-  const statusMap = new Map<string, Map<string, string>>();
-  for (const h of recentRuns) {
-    // We need actual test results, not just counts
-    // Use history runId to find the right data
-  }
-  // Rebuild from history runs — we only have counts, so use a simplified view from the full data
-  // Actually build from flakyTests + testMap approach
-  const testNames = [...new Set([
-    ...data.flakyTests.map((t) => t.name),
-    ...data.latestResults.map((t) => t.name),
-  ])];
+  const testNames = [...data.crossRunStatus.keys()].sort();
 
-  // Simplified cross-run: show test name + status indicators per run
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-xs">
@@ -361,20 +348,24 @@ function CrossRunTable({ data, cm }: { data: SuiteReportData; cm: string }) {
           </tr>
         </thead>
         <tbody>
-          {testNames.slice(0, 15).map((name, i) => (
-            <tr key={name} className={i % 2 === 1 ? "bg-muted/30" : ""}>
-              <td className="px-2 py-1 font-mono truncate max-w-[160px]">{name}</td>
-              {recentRuns.map((h) => {
-                // We don't have per-test-per-run data in the simplified history,
-                // so show a placeholder approach using the full runs data
-                return (
-                  <td key={h.runId} className="px-1.5 py-1 text-center">
-                    <CrossRunCell testName={name} runId={h.runId} data={data} cm={cm} />
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
+          {testNames.slice(0, 15).map((name, i) => {
+            const runMap = data.crossRunStatus.get(name);
+            return (
+              <tr key={name} className={i % 2 === 1 ? "bg-muted/30" : ""}>
+                <td className="px-2 py-1 font-mono truncate max-w-[160px]">{name}</td>
+                {recentRuns.map((h) => {
+                  const status = runMap?.get(h.runId);
+                  const icon = status === "passed" ? "✓" : status === "failed" ? "✗" : status === "skipped" ? "⊘" : "—";
+                  const cls = status ? statusClass(status, cm) : "text-muted-foreground";
+                  return (
+                    <td key={h.runId} className={`px-1.5 py-1 text-center font-bold ${cls}`}>
+                      {icon}
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
       {testNames.length > 15 && (
@@ -382,12 +373,6 @@ function CrossRunTable({ data, cm }: { data: SuiteReportData; cm: string }) {
       )}
     </div>
   );
-}
-
-function CrossRunCell({ testName, runId, data, cm }: { testName: string; runId: string; data: SuiteReportData; cm: string }) {
-  // This is a preview limitation — we don't store per-test-per-run in SuiteReportData currently
-  // Show a "—" as the cross-run table is better served in the PDF generator with full data
-  return <span className="text-muted-foreground">—</span>;
 }
 
 function SectionHeader({ title }: { title: string }) {
