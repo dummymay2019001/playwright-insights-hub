@@ -118,9 +118,9 @@ const ExportPage = () => {
       </div>
 
       {/* Split layout */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row lg:overflow-hidden">
         {/* Settings Panel */}
-        <div className="lg:w-[360px] xl:w-[400px] shrink-0 border-r overflow-y-auto bg-card">
+        <div className="lg:w-[360px] xl:w-[400px] shrink-0 border-r lg:overflow-y-auto bg-card">
           <div className="p-4">
             <ExportSettingsPanel options={options} onChange={handleOptionsChange} />
           </div>
