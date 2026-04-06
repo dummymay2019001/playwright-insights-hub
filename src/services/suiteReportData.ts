@@ -14,6 +14,8 @@ export interface SuiteReportData {
   perfectRuns: number;
   avgPassRate: number;
   trend: number; // delta vs previous
+  // Cross-run per-test status (testName → runId → status)
+  crossRunStatus: Map<string, Map<string, string>>;
   // Per-run history
   history: {
     runId: string;
