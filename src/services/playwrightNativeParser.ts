@@ -105,7 +105,7 @@ function convertSteps(pwSteps?: PWStepResult[]): TestStep[] | undefined {
     name: s.title,
     status: s.error ? "failed" as TestStatus : "passed" as TestStatus,
     duration: s.duration,
-    error: s.error ? [s.error.message, s.error.stack].filter(Boolean).join("\n") : undefined,
+    error: s.error ? stripAnsi([s.error.message, s.error.stack].filter(Boolean).join("\n")) : undefined,
     steps: convertSteps(s.steps),
   }));
 }
