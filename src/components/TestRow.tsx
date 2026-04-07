@@ -186,7 +186,16 @@ export function TestRow({ test: t, runId }: TestRowProps) {
               <p className="text-xs font-medium text-muted-foreground mb-1">Logs</p>
               <div className="font-mono text-xs text-muted-foreground bg-muted/50 border rounded p-2 space-y-0.5">
                 {t.logs.map((line, i) => {
-                  const text = typeof line === "object" ? JSON.stringify(line, null, 2) : String(line);
+                  let text: string;
+                  if (typeof line === "object" && line !== null) {
+                    const obj = line as Record<string, unknown>;
+                    text = typeof obj.text === "string" ? obj.text : JSON.stringify(line, null, 2);
+                  } else {
+                    text = String(line);
+                  }
+                  // Strip ANSI codes and trailing newlines
+                  text = text.replace(/\u001b\[[0-9;]*m/g, "").replace(/\n$/, "");
+                  if (!text.trim()) return null;
                   const cls = text.includes("[ERROR]") ? "text-destructive" : text.includes("[WARN]") ? "text-warning" : text.includes("[DEBUG]") ? "text-blue-400" : text.includes("[INFO]") ? "text-emerald-400" : "";
                   return <div key={i} className={cls}>{text}</div>;
                 })}
