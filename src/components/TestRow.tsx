@@ -186,7 +186,7 @@ export function TestRow({ test: t, runId }: TestRowProps) {
               <p className="text-xs font-medium text-muted-foreground mb-1">Logs</p>
               <div className="font-mono text-xs text-muted-foreground bg-muted/50 border rounded p-2 space-y-0.5">
                 {t.logs.map((line, i) => (
-                  <div key={i} className={String(line).includes("[ERROR]") ? "text-destructive" : String(line).includes("[WARN]") ? "text-warning" : ""}>{String(line)}</div>
+                  <div key={i} className={(() => { const s = typeof line === "object" ? JSON.stringify(line, null, 2) : String(line); return s.includes("[ERROR]") ? "text-destructive" : s.includes("[WARN]") ? "text-warning" : ""; })()}>{typeof line === "object" ? JSON.stringify(line, null, 2) : String(line)}</div>
                 ))}
               </div>
             </div>
