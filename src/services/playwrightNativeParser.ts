@@ -1,6 +1,11 @@
 import { TestRun, TestResult, TestStatus, RunManifest, ApiPayload, TestStep } from "@/models/types";
 import { classifyDefect, inferSeverity } from "@/services/defectClassifier";
 
+/** Strip ANSI escape codes from text */
+function stripAnsi(text: string): string {
+  return text.replace(/\u001b\[[0-9;]*m/g, "");
+}
+
 interface PWAttachment {
   name: string;
   contentType: string;
@@ -100,7 +105,7 @@ function convertSteps(pwSteps?: PWStepResult[]): TestStep[] | undefined {
     name: s.title,
     status: s.error ? "failed" as TestStatus : "passed" as TestStatus,
     duration: s.duration,
-    error: s.error ? [s.error.message, s.error.stack].filter(Boolean).join("\n") : undefined,
+    error: s.error ? stripAnsi([s.error.message, s.error.stack].filter(Boolean).join("\n")) : undefined,
     steps: convertSteps(s.steps),
   }));
 }
@@ -189,10 +194,16 @@ export function parsePlaywrightNativeReport(report: PlaywrightNativeReport, file
           const hasApiAnnotations = test.annotations?.some(a => a.type === "method" || a.type === "endpoint");
           if (hasApiAnnotations && !tags.includes("api")) tags.push("api");
 
-          const apiPayload = extractApiPayload(test.annotations, lastResult.attachments);
+          // Collect attachments from ALL result attempts (failed retries may have attachments the last attempt lacks)
+          const allAttachments: PWAttachment[] = [];
+          for (const r of test.results) {
+            if (r.attachments) allAttachments.push(...r.attachments);
+          }
+
+          const apiPayload = extractApiPayload(test.annotations, allAttachments.length > 0 ? allAttachments : undefined);
 
           const error = lastResult.error
-            ? [lastResult.error.message, lastResult.error.stack].filter(Boolean).join("\n")
+            ? stripAnsi([lastResult.error.message, lastResult.error.stack].filter(Boolean).join("\n"))
             : undefined;
 
           const logs: string[] = [];
