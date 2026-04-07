@@ -197,8 +197,33 @@ export function parsePlaywrightNativeReport(report: PlaywrightNativeReport, file
             : undefined;
 
           const logs: string[] = [];
-          if (lastResult.stdout) logs.push(...lastResult.stdout);
-          if (lastResult.stderr) logs.push(...lastResult.stderr.map(s => `[ERROR] ${s}`));
+          if (lastResult.stdout) {
+            for (const entry of lastResult.stdout) {
+              if (typeof entry === "object" && entry !== null && "text" in (entry as Record<string, unknown>)) {
+                const raw = (entry as Record<string, unknown>).text as string;
+                // Strip ANSI codes and trailing newlines
+                const clean = raw.replace(/\u001b\[[0-9;]*m/g, "").replace(/\n$/, "");
+                if (clean.trim()) logs.push(clean);
+              } else if (typeof entry === "string") {
+                logs.push(entry);
+              } else {
+                logs.push(JSON.stringify(entry));
+              }
+            }
+          }
+          if (lastResult.stderr) {
+            for (const entry of lastResult.stderr) {
+              if (typeof entry === "object" && entry !== null && "text" in (entry as Record<string, unknown>)) {
+                const raw = (entry as Record<string, unknown>).text as string;
+                const clean = raw.replace(/\u001b\[[0-9;]*m/g, "").replace(/\n$/, "");
+                if (clean.trim()) logs.push(`[ERROR] ${clean}`);
+              } else if (typeof entry === "string") {
+                logs.push(`[ERROR] ${entry}`);
+              } else {
+                logs.push(`[ERROR] ${JSON.stringify(entry)}`);
+              }
+            }
+          }
 
           const steps = convertSteps(lastResult.steps);
 
