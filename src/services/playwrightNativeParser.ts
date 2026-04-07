@@ -4,7 +4,22 @@ import { classifyDefect, inferSeverity } from "@/services/defectClassifier";
 interface PWAttachment {
   name: string;
   contentType: string;
-  body?: string;
+  body?: string; // may be base64 encoded
+}
+
+function decodeAttachmentBody(body?: string): string | undefined {
+  if (!body) return undefined;
+  // If it looks like JSON already, return as-is
+  if (body.trimStart().startsWith("{") || body.trimStart().startsWith("[")) return body;
+  // Try base64 decode
+  try {
+    const decoded = atob(body);
+    // Check if decoded looks like valid text
+    if (/^[\x20-\x7E\s]+$/.test(decoded.slice(0, 100))) return decoded;
+    return body;
+  } catch {
+    return body;
+  }
 }
 
 interface PWError {
