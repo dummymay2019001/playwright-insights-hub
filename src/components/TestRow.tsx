@@ -190,7 +190,6 @@ export function TestRow({ test: t, runId }: TestRowProps) {
                   const cls = text.includes("[ERROR]") ? "text-destructive" : text.includes("[WARN]") ? "text-warning" : text.includes("[DEBUG]") ? "text-blue-400" : text.includes("[INFO]") ? "text-emerald-400" : "";
                   return <div key={i} className={cls}>{text}</div>;
                 })}
-                ))}
               </div>
             </div>
           )}
