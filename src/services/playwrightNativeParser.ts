@@ -194,10 +194,16 @@ export function parsePlaywrightNativeReport(report: PlaywrightNativeReport, file
           const hasApiAnnotations = test.annotations?.some(a => a.type === "method" || a.type === "endpoint");
           if (hasApiAnnotations && !tags.includes("api")) tags.push("api");
 
-          const apiPayload = extractApiPayload(test.annotations, lastResult.attachments);
+          // Collect attachments from ALL result attempts (failed retries may have attachments the last attempt lacks)
+          const allAttachments: PWAttachment[] = [];
+          for (const r of test.results) {
+            if (r.attachments) allAttachments.push(...r.attachments);
+          }
+
+          const apiPayload = extractApiPayload(test.annotations, allAttachments.length > 0 ? allAttachments : undefined);
 
           const error = lastResult.error
-            ? [lastResult.error.message, lastResult.error.stack].filter(Boolean).join("\n")
+            ? stripAnsi([lastResult.error.message, lastResult.error.stack].filter(Boolean).join("\n"))
             : undefined;
 
           const logs: string[] = [];

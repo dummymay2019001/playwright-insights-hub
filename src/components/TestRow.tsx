@@ -177,7 +177,7 @@ export function TestRow({ test: t, runId }: TestRowProps) {
             <div>
               <p className="text-xs font-medium text-destructive mb-1">Error</p>
               <pre className="font-mono text-xs text-destructive/80 bg-destructive/5 border border-destructive/20 rounded p-2 overflow-x-auto whitespace-pre-wrap">
-                {t.error}
+                {t.error?.replace(/\u001b\[[0-9;]*m/g, "")}
               </pre>
             </div>
           )}
