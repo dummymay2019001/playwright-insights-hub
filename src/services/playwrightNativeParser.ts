@@ -205,7 +205,7 @@ export function parsePlaywrightNativeReport(report: PlaywrightNativeReport, file
           results.push({
             id: `pw-${testCounter}-${Date.now()}`,
             name: `${suiteName} > ${spec.title}`,
-            suite: suiteName.split(" > ")[0],
+            suite: suiteName.split(" > ").find(s => s && s !== fileBasedSuite) || suiteName.split(" > ")[0] || fileBasedSuite,
             file,
             status,
             duration: lastResult.duration,
