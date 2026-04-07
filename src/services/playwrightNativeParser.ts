@@ -119,25 +119,49 @@ export function parsePlaywrightNativeReport(report: PlaywrightNativeReport, file
   }
 
   function extractApiPayload(annotations?: Array<{ type: string; description?: string }>, attachments?: PWAttachment[]): ApiPayload | undefined {
-    if (!annotations) return undefined;
-    const method = annotations.find(a => a.type === "method")?.description;
-    const url = annotations.find(a => a.type === "endpoint")?.description;
-    if (!method && !url) return undefined;
+    const method = annotations?.find(a => a.type === "method")?.description;
+    const url = annotations?.find(a => a.type === "endpoint")?.description;
 
     let requestBody: unknown;
     let responseBody: unknown;
 
     if (attachments) {
+      // Handle combined api-payload attachment (base64 encoded JSON)
+      const apiPayloadAttach = attachments.find(a => a.name === "api-payload");
+      if (apiPayloadAttach?.body) {
+        const decoded = decodeAttachmentBody(apiPayloadAttach.body);
+        if (decoded) {
+          try {
+            const parsed = JSON.parse(decoded);
+            return {
+              method: method || parsed.method,
+              url: url || parsed.url || parsed.endpoint,
+              statusCode: parsed.statusCode || parsed.status,
+              requestHeaders: parsed.requestHeaders || parsed.headers,
+              requestBody: parsed.requestBody || parsed.request || parsed.body,
+              responseHeaders: parsed.responseHeaders,
+              responseBody: parsed.responseBody || parsed.response,
+              latency: parsed.latency || parsed.duration,
+            };
+          } catch {
+            // Fall through to individual attachments
+          }
+        }
+      }
+
       const reqAttach = attachments.find(a => a.name === "request" || a.name === "api-request");
       const resAttach = attachments.find(a => a.name === "response" || a.name === "api-response");
       if (reqAttach?.body) {
-        try { requestBody = JSON.parse(reqAttach.body); } catch { requestBody = reqAttach.body; }
+        const decoded = decodeAttachmentBody(reqAttach.body);
+        try { requestBody = JSON.parse(decoded || ""); } catch { requestBody = decoded || reqAttach.body; }
       }
       if (resAttach?.body) {
-        try { responseBody = JSON.parse(resAttach.body); } catch { responseBody = resAttach.body; }
+        const decoded = decodeAttachmentBody(resAttach.body);
+        try { responseBody = JSON.parse(decoded || ""); } catch { responseBody = decoded || resAttach.body; }
       }
     }
 
+    if (!method && !url && !requestBody && !responseBody) return undefined;
     return { method, url, requestBody, responseBody };
   }
 
