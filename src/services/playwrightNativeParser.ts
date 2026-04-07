@@ -4,22 +4,27 @@ import { classifyDefect, inferSeverity } from "@/services/defectClassifier";
 interface PWAttachment {
   name: string;
   contentType: string;
-  body?: string; // may be base64 encoded
+  body?: string | Record<string, unknown>; // may be string, base64, or already-parsed object
 }
 
-function decodeAttachmentBody(body?: string): string | undefined {
+function normalizeBody(body?: string | Record<string, unknown>): unknown {
   if (!body) return undefined;
-  // If it looks like JSON already, return as-is
-  if (body.trimStart().startsWith("{") || body.trimStart().startsWith("[")) return body;
+  // Already an object (parsed JSON)
+  if (typeof body === "object") return body;
+  // String: try JSON parse directly
+  const trimmed = body.trim();
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+    try { return JSON.parse(trimmed); } catch { /* fall through */ }
+  }
   // Try base64 decode
   try {
     const decoded = atob(body);
-    // Check if decoded looks like valid text
+    if (decoded.trim().startsWith("{") || decoded.trim().startsWith("[")) {
+      try { return JSON.parse(decoded); } catch { /* fall through */ }
+    }
     if (/^[\x20-\x7E\s]+$/.test(decoded.slice(0, 100))) return decoded;
-    return body;
-  } catch {
-    return body;
-  }
+  } catch { /* not base64 */ }
+  return body;
 }
 
 interface PWError {
@@ -32,8 +37,8 @@ interface PWResult {
   duration: number;
   error?: PWError;
   attachments?: PWAttachment[];
-  stdout?: string[];
-  stderr?: string[];
+  stdout?: unknown[];
+  stderr?: unknown[];
   steps?: PWStepResult[];
 }
 
@@ -126,38 +131,32 @@ export function parsePlaywrightNativeReport(report: PlaywrightNativeReport, file
     let responseBody: unknown;
 
     if (attachments) {
-      // Handle combined api-payload attachment (base64 encoded JSON)
+      // Handle combined api-payload attachment
       const apiPayloadAttach = attachments.find(a => a.name === "api-payload");
       if (apiPayloadAttach?.body) {
-        const decoded = decodeAttachmentBody(apiPayloadAttach.body);
-        if (decoded) {
-          try {
-            const parsed = JSON.parse(decoded);
-            return {
-              method: method || parsed.method,
-              url: url || parsed.url || parsed.endpoint,
-              statusCode: parsed.statusCode || parsed.status,
-              requestHeaders: parsed.requestHeaders || parsed.headers,
-              requestBody: parsed.requestBody || parsed.request || parsed.body,
-              responseHeaders: parsed.responseHeaders,
-              responseBody: parsed.responseBody || parsed.response,
-              latency: parsed.latency || parsed.duration,
-            };
-          } catch {
-            // Fall through to individual attachments
-          }
+        const parsed = normalizeBody(apiPayloadAttach.body);
+        if (parsed && typeof parsed === "object") {
+          const p = parsed as Record<string, unknown>;
+          return {
+            method: method || p.method as string,
+            url: url || (p.url || p.endpoint) as string,
+            statusCode: (p.statusCode || p.status) as number,
+            requestHeaders: (p.requestHeaders || p.headers) as Record<string, string> | undefined,
+            requestBody: (p.requestBody || p.request || p.body) as unknown,
+            responseHeaders: p.responseHeaders as Record<string, string> | undefined,
+            responseBody: (p.responseBody || p.response) as unknown,
+            latency: (p.latency || p.duration) as number,
+          };
         }
       }
 
       const reqAttach = attachments.find(a => a.name === "request" || a.name === "api-request");
       const resAttach = attachments.find(a => a.name === "response" || a.name === "api-response");
       if (reqAttach?.body) {
-        const decoded = decodeAttachmentBody(reqAttach.body);
-        try { requestBody = JSON.parse(decoded || ""); } catch { requestBody = decoded || reqAttach.body; }
+        requestBody = normalizeBody(reqAttach.body);
       }
       if (resAttach?.body) {
-        const decoded = decodeAttachmentBody(resAttach.body);
-        try { responseBody = JSON.parse(decoded || ""); } catch { responseBody = decoded || resAttach.body; }
+        responseBody = normalizeBody(resAttach.body);
       }
     }
 
@@ -197,8 +196,33 @@ export function parsePlaywrightNativeReport(report: PlaywrightNativeReport, file
             : undefined;
 
           const logs: string[] = [];
-          if (lastResult.stdout) logs.push(...lastResult.stdout);
-          if (lastResult.stderr) logs.push(...lastResult.stderr.map(s => `[ERROR] ${s}`));
+          if (lastResult.stdout) {
+            for (const entry of lastResult.stdout) {
+              if (typeof entry === "object" && entry !== null && "text" in (entry as Record<string, unknown>)) {
+                const raw = (entry as Record<string, unknown>).text as string;
+                // Strip ANSI codes and trailing newlines
+                const clean = raw.replace(/\u001b\[[0-9;]*m/g, "").replace(/\n$/, "");
+                if (clean.trim()) logs.push(clean);
+              } else if (typeof entry === "string") {
+                logs.push(entry);
+              } else {
+                logs.push(JSON.stringify(entry));
+              }
+            }
+          }
+          if (lastResult.stderr) {
+            for (const entry of lastResult.stderr) {
+              if (typeof entry === "object" && entry !== null && "text" in (entry as Record<string, unknown>)) {
+                const raw = (entry as Record<string, unknown>).text as string;
+                const clean = raw.replace(/\u001b\[[0-9;]*m/g, "").replace(/\n$/, "");
+                if (clean.trim()) logs.push(`[ERROR] ${clean}`);
+              } else if (typeof entry === "string") {
+                logs.push(`[ERROR] ${entry}`);
+              } else {
+                logs.push(`[ERROR] ${JSON.stringify(entry)}`);
+              }
+            }
+          }
 
           const steps = convertSteps(lastResult.steps);
 
