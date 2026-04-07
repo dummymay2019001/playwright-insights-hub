@@ -1,6 +1,11 @@
 import { TestRun, TestResult, TestStatus, RunManifest, ApiPayload, TestStep } from "@/models/types";
 import { classifyDefect, inferSeverity } from "@/services/defectClassifier";
 
+/** Strip ANSI escape codes from text */
+function stripAnsi(text: string): string {
+  return text.replace(/\u001b\[[0-9;]*m/g, "");
+}
+
 interface PWAttachment {
   name: string;
   contentType: string;
