@@ -71,7 +71,7 @@ function StepView({ step, depth = 0 }: { step: TestStep; depth?: number }) {
         <span className="font-mono text-[10px] text-muted-foreground">{step.duration}ms</span>
       </div>
       {step.error && (
-        <pre className="font-mono text-[10px] text-destructive/70 ml-4 truncate">{step.error}</pre>
+        <pre className="font-mono text-[10px] text-destructive/70 ml-4 truncate">{step.error?.replace(/\u001b\[[0-9;]*m/g, "")}</pre>
       )}
       {step.steps?.map((child, i) => (
         <StepView key={i} step={child} depth={depth + 1} />
