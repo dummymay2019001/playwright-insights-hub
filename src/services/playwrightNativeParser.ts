@@ -32,8 +32,8 @@ interface PWResult {
   duration: number;
   error?: PWError;
   attachments?: PWAttachment[];
-  stdout?: string[];
-  stderr?: string[];
+  stdout?: unknown[];
+  stderr?: unknown[];
   steps?: PWStepResult[];
 }
 
