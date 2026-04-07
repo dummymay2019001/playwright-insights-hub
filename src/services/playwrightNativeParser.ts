@@ -4,7 +4,22 @@ import { classifyDefect, inferSeverity } from "@/services/defectClassifier";
 interface PWAttachment {
   name: string;
   contentType: string;
-  body?: string;
+  body?: string; // may be base64 encoded
+}
+
+function decodeAttachmentBody(body?: string): string | undefined {
+  if (!body) return undefined;
+  // If it looks like JSON already, return as-is
+  if (body.trimStart().startsWith("{") || body.trimStart().startsWith("[")) return body;
+  // Try base64 decode
+  try {
+    const decoded = atob(body);
+    // Check if decoded looks like valid text
+    if (/^[\x20-\x7E\s]+$/.test(decoded.slice(0, 100))) return decoded;
+    return body;
+  } catch {
+    return body;
+  }
 }
 
 interface PWError {
@@ -104,31 +119,57 @@ export function parsePlaywrightNativeReport(report: PlaywrightNativeReport, file
   }
 
   function extractApiPayload(annotations?: Array<{ type: string; description?: string }>, attachments?: PWAttachment[]): ApiPayload | undefined {
-    if (!annotations) return undefined;
-    const method = annotations.find(a => a.type === "method")?.description;
-    const url = annotations.find(a => a.type === "endpoint")?.description;
-    if (!method && !url) return undefined;
+    const method = annotations?.find(a => a.type === "method")?.description;
+    const url = annotations?.find(a => a.type === "endpoint")?.description;
 
     let requestBody: unknown;
     let responseBody: unknown;
 
     if (attachments) {
+      // Handle combined api-payload attachment (base64 encoded JSON)
+      const apiPayloadAttach = attachments.find(a => a.name === "api-payload");
+      if (apiPayloadAttach?.body) {
+        const decoded = decodeAttachmentBody(apiPayloadAttach.body);
+        if (decoded) {
+          try {
+            const parsed = JSON.parse(decoded);
+            return {
+              method: method || parsed.method,
+              url: url || parsed.url || parsed.endpoint,
+              statusCode: parsed.statusCode || parsed.status,
+              requestHeaders: parsed.requestHeaders || parsed.headers,
+              requestBody: parsed.requestBody || parsed.request || parsed.body,
+              responseHeaders: parsed.responseHeaders,
+              responseBody: parsed.responseBody || parsed.response,
+              latency: parsed.latency || parsed.duration,
+            };
+          } catch {
+            // Fall through to individual attachments
+          }
+        }
+      }
+
       const reqAttach = attachments.find(a => a.name === "request" || a.name === "api-request");
       const resAttach = attachments.find(a => a.name === "response" || a.name === "api-response");
       if (reqAttach?.body) {
-        try { requestBody = JSON.parse(reqAttach.body); } catch { requestBody = reqAttach.body; }
+        const decoded = decodeAttachmentBody(reqAttach.body);
+        try { requestBody = JSON.parse(decoded || ""); } catch { requestBody = decoded || reqAttach.body; }
       }
       if (resAttach?.body) {
-        try { responseBody = JSON.parse(resAttach.body); } catch { responseBody = resAttach.body; }
+        const decoded = decodeAttachmentBody(resAttach.body);
+        try { responseBody = JSON.parse(decoded || ""); } catch { responseBody = decoded || resAttach.body; }
       }
     }
 
+    if (!method && !url && !requestBody && !responseBody) return undefined;
     return { method, url, requestBody, responseBody };
   }
 
   function processSuite(suite: PWSuite, parentSuiteName: string) {
     const suiteName = parentSuiteName ? `${parentSuiteName} > ${suite.title}` : suite.title;
     const file = suite.file || "unknown";
+    // Extract actual file name from nested path for suite grouping
+    const fileBasedSuite = file !== "unknown" ? file.split("/").pop()?.replace(/\.(test|spec)\.(ts|js|tsx|jsx)$/i, "") || file : "";
 
     if (suite.specs) {
       for (const spec of suite.specs) {
@@ -164,7 +205,7 @@ export function parsePlaywrightNativeReport(report: PlaywrightNativeReport, file
           results.push({
             id: `pw-${testCounter}-${Date.now()}`,
             name: `${suiteName} > ${spec.title}`,
-            suite: suiteName.split(" > ")[0],
+            suite: suiteName.split(" > ").find(s => s && s !== fileBasedSuite) || suiteName.split(" > ")[0] || fileBasedSuite,
             file,
             status,
             duration: lastResult.duration,

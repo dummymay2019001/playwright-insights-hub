@@ -57,8 +57,8 @@ export function SuiteBreakdown({ results, runId }: SuiteBreakdownProps) {
                 <div className="flex items-center gap-2 sm:gap-3">
                   <span className="font-mono text-xs text-muted-foreground w-5">{isExpanded ? "▼" : "▶"}</span>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-mono text-sm font-semibold text-foreground">{s.suite}</span>
+                    <div className="flex items-center gap-2 flex-wrap min-w-0">
+                      <span className="font-mono text-sm font-semibold text-foreground truncate max-w-[200px] sm:max-w-none" title={s.suite}>{s.suite}</span>
                       <Badge variant="outline" className="font-mono text-[10px]">{s.file}</Badge>
                       <button
                         onClick={(e) => { e.stopPropagation(); navigate(`/suite/${encodeURIComponent(s.suite)}`); }}
