@@ -141,9 +141,9 @@ export function parsePlaywrightNativeReport(report: PlaywrightNativeReport, file
             method: method || p.method as string,
             url: url || (p.url || p.endpoint) as string,
             statusCode: (p.statusCode || p.status) as number,
-            requestHeaders: (p.requestHeaders || p.headers) as unknown,
+            requestHeaders: (p.requestHeaders || p.headers) as Record<string, string> | undefined,
             requestBody: (p.requestBody || p.request || p.body) as unknown,
-            responseHeaders: p.responseHeaders as unknown,
+            responseHeaders: p.responseHeaders as Record<string, string> | undefined,
             responseBody: (p.responseBody || p.response) as unknown,
             latency: (p.latency || p.duration) as number,
           };
