@@ -7,19 +7,24 @@ interface PWAttachment {
   body?: string | Record<string, unknown>; // may be string, base64, or already-parsed object
 }
 
-function decodeAttachmentBody(body?: string): string | undefined {
+function normalizeBody(body?: string | Record<string, unknown>): unknown {
   if (!body) return undefined;
-  // If it looks like JSON already, return as-is
-  if (body.trimStart().startsWith("{") || body.trimStart().startsWith("[")) return body;
+  // Already an object (parsed JSON)
+  if (typeof body === "object") return body;
+  // String: try JSON parse directly
+  const trimmed = body.trim();
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+    try { return JSON.parse(trimmed); } catch { /* fall through */ }
+  }
   // Try base64 decode
   try {
     const decoded = atob(body);
-    // Check if decoded looks like valid text
+    if (decoded.trim().startsWith("{") || decoded.trim().startsWith("[")) {
+      try { return JSON.parse(decoded); } catch { /* fall through */ }
+    }
     if (/^[\x20-\x7E\s]+$/.test(decoded.slice(0, 100))) return decoded;
-    return body;
-  } catch {
-    return body;
-  }
+  } catch { /* not base64 */ }
+  return body;
 }
 
 interface PWError {
