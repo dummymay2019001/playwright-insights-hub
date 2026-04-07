@@ -131,38 +131,32 @@ export function parsePlaywrightNativeReport(report: PlaywrightNativeReport, file
     let responseBody: unknown;
 
     if (attachments) {
-      // Handle combined api-payload attachment (base64 encoded JSON)
+      // Handle combined api-payload attachment
       const apiPayloadAttach = attachments.find(a => a.name === "api-payload");
       if (apiPayloadAttach?.body) {
-        const decoded = decodeAttachmentBody(apiPayloadAttach.body);
-        if (decoded) {
-          try {
-            const parsed = JSON.parse(decoded);
-            return {
-              method: method || parsed.method,
-              url: url || parsed.url || parsed.endpoint,
-              statusCode: parsed.statusCode || parsed.status,
-              requestHeaders: parsed.requestHeaders || parsed.headers,
-              requestBody: parsed.requestBody || parsed.request || parsed.body,
-              responseHeaders: parsed.responseHeaders,
-              responseBody: parsed.responseBody || parsed.response,
-              latency: parsed.latency || parsed.duration,
-            };
-          } catch {
-            // Fall through to individual attachments
-          }
+        const parsed = normalizeBody(apiPayloadAttach.body);
+        if (parsed && typeof parsed === "object") {
+          const p = parsed as Record<string, unknown>;
+          return {
+            method: method || p.method as string,
+            url: url || (p.url || p.endpoint) as string,
+            statusCode: (p.statusCode || p.status) as number,
+            requestHeaders: (p.requestHeaders || p.headers) as unknown,
+            requestBody: (p.requestBody || p.request || p.body) as unknown,
+            responseHeaders: p.responseHeaders as unknown,
+            responseBody: (p.responseBody || p.response) as unknown,
+            latency: (p.latency || p.duration) as number,
+          };
         }
       }
 
       const reqAttach = attachments.find(a => a.name === "request" || a.name === "api-request");
       const resAttach = attachments.find(a => a.name === "response" || a.name === "api-response");
       if (reqAttach?.body) {
-        const decoded = decodeAttachmentBody(reqAttach.body);
-        try { requestBody = JSON.parse(decoded || ""); } catch { requestBody = decoded || reqAttach.body; }
+        requestBody = normalizeBody(reqAttach.body);
       }
       if (resAttach?.body) {
-        const decoded = decodeAttachmentBody(resAttach.body);
-        try { responseBody = JSON.parse(decoded || ""); } catch { responseBody = decoded || resAttach.body; }
+        responseBody = normalizeBody(resAttach.body);
       }
     }
 
