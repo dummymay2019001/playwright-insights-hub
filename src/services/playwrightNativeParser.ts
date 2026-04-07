@@ -4,7 +4,7 @@ import { classifyDefect, inferSeverity } from "@/services/defectClassifier";
 interface PWAttachment {
   name: string;
   contentType: string;
-  body?: string; // may be base64 encoded
+  body?: string | Record<string, unknown>; // may be string, base64, or already-parsed object
 }
 
 function decodeAttachmentBody(body?: string): string | undefined {
