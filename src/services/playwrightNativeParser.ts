@@ -168,6 +168,8 @@ export function parsePlaywrightNativeReport(report: PlaywrightNativeReport, file
   function processSuite(suite: PWSuite, parentSuiteName: string) {
     const suiteName = parentSuiteName ? `${parentSuiteName} > ${suite.title}` : suite.title;
     const file = suite.file || "unknown";
+    // Extract actual file name from nested path for suite grouping
+    const fileBasedSuite = file !== "unknown" ? file.split("/").pop()?.replace(/\.(test|spec)\.(ts|js|tsx|jsx)$/i, "") || file : "";
 
     if (suite.specs) {
       for (const spec of suite.specs) {
