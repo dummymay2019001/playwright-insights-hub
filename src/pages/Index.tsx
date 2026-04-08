@@ -211,17 +211,13 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* Recent Runs */}
+      {/* Recent Runs — grouped by time */}
       <section>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Recent Runs</h2>
           <span className="font-mono text-[10px] text-muted-foreground">{sortedRuns.length} total</span>
         </div>
-        <div className="space-y-2">
-          {sortedRuns.map((run) => (
-            <RunRow key={run.manifest.runId} manifest={run.manifest} onRemove={dataMode === "imported" ? removeRun : undefined} />
-          ))}
-        </div>
+        <GroupedRunList runs={runs} onRemove={dataMode === "imported" ? removeRun : undefined} />
       </section>
     </div>
   );
