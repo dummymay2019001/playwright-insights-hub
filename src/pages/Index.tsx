@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRuns } from "@/store/RunsContext";
-import { RunRow } from "@/components/RunRow";
+import { GroupedRunList } from "@/components/GroupedRunList";
 import { StatCard } from "@/components/StatCard";
 import { HealthGauge } from "@/components/HealthGauge";
 import { FileDropZone } from "@/components/FileDropZone";
