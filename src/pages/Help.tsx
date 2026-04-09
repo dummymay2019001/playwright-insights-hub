@@ -605,10 +605,21 @@ import { LoginPage } from '../pages/LoginPage';
 
 test.describe('auth', () => {
   test('successful login', { tag: ['@smoke', '@critical'] }, async ({ page }) => {
-    const loginPage = new LoginPage(page);
-    await loginPage.goto();
-    await loginPage.login('admin@test.com', 'password123');
-    await expect(page).toHaveURL('/dashboard');
+    test.info().annotations.push({ type: 'severity', description: 'critical' });
+
+    await test.step('Navigate to login page', async () => {
+      const loginPage = new LoginPage(page);
+      await loginPage.goto();
+    });
+
+    await test.step('Enter credentials and submit', async () => {
+      const loginPage = new LoginPage(page);
+      await loginPage.login('admin@test.com', 'password123');
+    });
+
+    await test.step('Verify redirect to dashboard', async () => {
+      await expect(page).toHaveURL('/dashboard');
+    });
   });
 });`} />
             <SnippetBlock title="Data-Driven Form Validation" code={`const invalidInputs = [
@@ -687,6 +698,8 @@ test.describe('file-ops', { tag: '@regression' }, () => {
   let userId: string;
 
   test('POST /api/users — create', async ({ request }) => {
+    test.info().annotations.push({ type: 'severity', description: 'critical' });
+
     const res = await request.post('/api/users', {
       data: { name: 'Jane Doe', email: 'jane@test.com', role: 'admin' },
     });
@@ -694,12 +707,31 @@ test.describe('file-ops', { tag: '@regression' }, () => {
     const body = await res.json();
     expect(body).toHaveProperty('id');
     userId = body.id;
+
+    // Attach API payload for dashboard visibility
+    test.info().attach('api-payload', {
+      contentType: 'application/json',
+      body: Buffer.from(JSON.stringify({
+        method: 'POST', url: '/api/users',
+        statusCode: 201, requestBody: { name: 'Jane Doe', email: 'jane@test.com' },
+        responseBody: body,
+      })),
+    });
   });
 
   test('GET /api/users/:id — fetch', async ({ request }) => {
     const res = await request.get(\`/api/users/\${userId}\`);
     expect(res.status()).toBe(200);
-    expect((await res.json()).email).toBe('jane@test.com');
+    const body = await res.json();
+    expect(body.email).toBe('jane@test.com');
+
+    test.info().attach('api-payload', {
+      contentType: 'application/json',
+      body: Buffer.from(JSON.stringify({
+        method: 'GET', url: \`/api/users/\${userId}\`,
+        statusCode: 200, responseBody: body,
+      })),
+    });
   });
 
   test('DELETE /api/users/:id — remove', async ({ request }) => {
@@ -762,18 +794,23 @@ test('GET /api/products — matches schema', { tag: ['@api'] }, async ({ request
   });
 });`} />
             <SnippetBlock title="Performance Assertions" code={`test('GET /api/health — under 500ms', { tag: ['@api', '@smoke'] }, async ({ request }) => {
+  test.info().annotations.push({ type: 'severity', description: 'blocker' });
+
   const start = Date.now();
   const res = await request.get('/api/health');
   const latency = Date.now() - start;
+  const body = await res.json();
 
-  expect(res.status()).toBe(200);
-  expect(latency).toBeLessThan(500);
+  await test.step('Verify status and latency', async () => {
+    expect(res.status()).toBe(200);
+    expect(latency).toBeLessThan(500);
+  });
 
   test.info().attach('api-payload', {
     contentType: 'application/json',
     body: Buffer.from(JSON.stringify({
       method: 'GET', url: '/api/health', statusCode: 200, latency,
-      responseBody: await res.json(),
+      responseBody: body,
     })),
   });
 });`} />
@@ -788,15 +825,28 @@ test('GET /api/products — matches schema', { tag: ['@api'] }, async ({ request
             <SnippetBlock title="API Setup → UI Verification (Hybrid)" code={`test('create via API, verify in UI', {
   tag: ['@e2e', '@critical'],
 }, async ({ page, request }) => {
+  test.info().annotations.push({ type: 'severity', description: 'critical' });
+
   const res = await request.post('/api/products', {
     data: { name: 'Widget Pro', price: 29.99, category: 'gadgets' },
   });
   const { id } = await res.json();
 
-  await page.goto('/products');
-  await page.fill('.search-input', 'Widget Pro');
-  await expect(page.locator(\`[data-product-id="\${id}"]\`)).toBeVisible();
-  await expect(page.locator(\`[data-product-id="\${id}"] .price\`)).toHaveText('$29.99');
+  test.info().attach('api-payload', {
+    contentType: 'application/json',
+    body: Buffer.from(JSON.stringify({
+      method: 'POST', url: '/api/products', statusCode: res.status(),
+      requestBody: { name: 'Widget Pro', price: 29.99 },
+      responseBody: { id },
+    })),
+  });
+
+  await test.step('Verify product appears in UI', async () => {
+    await page.goto('/products');
+    await page.fill('.search-input', 'Widget Pro');
+    await expect(page.locator(\`[data-product-id="\${id}"]\`)).toBeVisible();
+    await expect(page.locator(\`[data-product-id="\${id}"] .price\`)).toHaveText('$29.99');
+  });
 
   await request.delete(\`/api/products/\${id}\`);
 });`} />

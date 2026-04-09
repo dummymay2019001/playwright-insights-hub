@@ -116,6 +116,28 @@ const SuiteDetailPage = () => {
     })).sort((a, b) => a.passRate - b.passRate || b.failed - a.failed);
   }, [history]);
 
+  // Tag summary across all runs for this suite
+  const tagSummary = useMemo(() => {
+    const map = new Map<string, { total: number; passed: number; failed: number; skipped: number }>();
+    for (const h of history) {
+      for (const t of h.tests) {
+        for (const tag of t.tags || []) {
+          const entry = map.get(tag) || { total: 0, passed: 0, failed: 0, skipped: 0 };
+          entry.total++;
+          if (t.status === "passed") entry.passed++;
+          if (t.status === "failed") entry.failed++;
+          if (t.status === "skipped") entry.skipped++;
+          map.set(tag, entry);
+        }
+      }
+    }
+    return [...map.entries()]
+      .map(([tag, counts]) => ({ tag, ...counts, rate: Math.round((counts.passed / counts.total) * 100) }))
+      .sort((a, b) => b.total - a.total);
+  }, [history]);
+
+  const uniqueTestCount = testAggregates.length;
+
   // Chart data
   const passRateData = useMemo(() => history.map((h) => ({
     date: new Date(h.run.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
@@ -161,7 +183,7 @@ const SuiteDetailPage = () => {
                 <Badge variant="outline" className="font-mono text-[10px]">{latestRun.tests[0]?.file}</Badge>
               </div>
               <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                Present in {stats?.runsCount} of {runs.length} runs · {latestRun.total} tests in latest
+                {uniqueTestCount} unique tests · Present in {stats?.runsCount} of {runs.length} runs · {latestRun.total} in latest
                 {history.length > 0 && ` · First seen ${new Date(history[0].run.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
               </p>
               <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -196,6 +218,29 @@ const SuiteDetailPage = () => {
           <StatCard label="Avg Duration" value={`${(stats.avgDuration / 1000).toFixed(1)}s`} subtitle="per run" icon="⏱" />
           <StatCard label="Total Retries" value={stats.totalRetries} variant={stats.totalRetries > 0 ? "warning" : "default"} icon="🔄" />
         </div>
+      )}
+
+      {/* Tag Summary */}
+      {tagSummary.length > 0 && (
+        <section className="rounded-xl border bg-card p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Tags in Suite</h2>
+            <span className="font-mono text-[10px] text-muted-foreground">{tagSummary.length} tags · {uniqueTestCount} tests</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {tagSummary.map((t) => (
+              <div key={t.tag} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border bg-muted/30">
+                <Badge variant="outline" className="font-mono text-[10px]">{t.tag}</Badge>
+                <span className="font-mono text-[10px] text-muted-foreground">{t.total}</span>
+                <span className="font-mono text-[10px] text-success">{t.passed}✓</span>
+                {t.failed > 0 && <span className="font-mono text-[10px] text-destructive">{t.failed}✗</span>}
+                <span className={`font-mono text-[10px] font-bold ${t.rate >= 95 ? "text-success" : t.rate >= 80 ? "text-warning" : "text-destructive"}`}>
+                  {t.rate}%
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* Charts */}
