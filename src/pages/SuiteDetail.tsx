@@ -220,6 +220,29 @@ const SuiteDetailPage = () => {
         </div>
       )}
 
+      {/* Tag Summary */}
+      {tagSummary.length > 0 && (
+        <section className="rounded-xl border bg-card p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Tags in Suite</h2>
+            <span className="font-mono text-[10px] text-muted-foreground">{tagSummary.length} tags · {uniqueTestCount} tests</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {tagSummary.map((t) => (
+              <div key={t.tag} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border bg-muted/30">
+                <Badge variant="outline" className="font-mono text-[10px]">{t.tag}</Badge>
+                <span className="font-mono text-[10px] text-muted-foreground">{t.total}</span>
+                <span className="font-mono text-[10px] text-success">{t.passed}✓</span>
+                {t.failed > 0 && <span className="font-mono text-[10px] text-destructive">{t.failed}✗</span>}
+                <span className={`font-mono text-[10px] font-bold ${t.rate >= 95 ? "text-success" : t.rate >= 80 ? "text-warning" : "text-destructive"}`}>
+                  {t.rate}%
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )
+
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Pass rate trend */}
