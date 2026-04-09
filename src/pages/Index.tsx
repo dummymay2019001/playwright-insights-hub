@@ -187,7 +187,7 @@ const DashboardPage = () => {
       </div>
 
       {/* Suite health heatmap */}
-      {latestRun && <SuiteHealthMap run={latestRun} />}
+      {runs.length > 0 && <SuiteHealthMap runs={runs} />}
 
       {/* Data mode badge */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
