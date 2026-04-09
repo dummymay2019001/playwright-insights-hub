@@ -116,6 +116,28 @@ const SuiteDetailPage = () => {
     })).sort((a, b) => a.passRate - b.passRate || b.failed - a.failed);
   }, [history]);
 
+  // Tag summary across all runs for this suite
+  const tagSummary = useMemo(() => {
+    const map = new Map<string, { total: number; passed: number; failed: number; skipped: number }>();
+    for (const h of history) {
+      for (const t of h.tests) {
+        for (const tag of t.tags || []) {
+          const entry = map.get(tag) || { total: 0, passed: 0, failed: 0, skipped: 0 };
+          entry.total++;
+          if (t.status === "passed") entry.passed++;
+          if (t.status === "failed") entry.failed++;
+          if (t.status === "skipped") entry.skipped++;
+          map.set(tag, entry);
+        }
+      }
+    }
+    return [...map.entries()]
+      .map(([tag, counts]) => ({ tag, ...counts, rate: Math.round((counts.passed / counts.total) * 100) }))
+      .sort((a, b) => b.total - a.total);
+  }, [history]);
+
+  const uniqueTestCount = testAggregates.length;
+
   // Chart data
   const passRateData = useMemo(() => history.map((h) => ({
     date: new Date(h.run.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
