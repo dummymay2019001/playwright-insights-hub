@@ -794,18 +794,23 @@ test('GET /api/products — matches schema', { tag: ['@api'] }, async ({ request
   });
 });`} />
             <SnippetBlock title="Performance Assertions" code={`test('GET /api/health — under 500ms', { tag: ['@api', '@smoke'] }, async ({ request }) => {
+  test.info().annotations.push({ type: 'severity', description: 'blocker' });
+
   const start = Date.now();
   const res = await request.get('/api/health');
   const latency = Date.now() - start;
+  const body = await res.json();
 
-  expect(res.status()).toBe(200);
-  expect(latency).toBeLessThan(500);
+  await test.step('Verify status and latency', async () => {
+    expect(res.status()).toBe(200);
+    expect(latency).toBeLessThan(500);
+  });
 
   test.info().attach('api-payload', {
     contentType: 'application/json',
     body: Buffer.from(JSON.stringify({
       method: 'GET', url: '/api/health', statusCode: 200, latency,
-      responseBody: await res.json(),
+      responseBody: body,
     })),
   });
 });`} />
