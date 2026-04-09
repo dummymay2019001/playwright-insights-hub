@@ -605,10 +605,21 @@ import { LoginPage } from '../pages/LoginPage';
 
 test.describe('auth', () => {
   test('successful login', { tag: ['@smoke', '@critical'] }, async ({ page }) => {
-    const loginPage = new LoginPage(page);
-    await loginPage.goto();
-    await loginPage.login('admin@test.com', 'password123');
-    await expect(page).toHaveURL('/dashboard');
+    test.info().annotations.push({ type: 'severity', description: 'critical' });
+
+    await test.step('Navigate to login page', async () => {
+      const loginPage = new LoginPage(page);
+      await loginPage.goto();
+    });
+
+    await test.step('Enter credentials and submit', async () => {
+      const loginPage = new LoginPage(page);
+      await loginPage.login('admin@test.com', 'password123');
+    });
+
+    await test.step('Verify redirect to dashboard', async () => {
+      await expect(page).toHaveURL('/dashboard');
+    });
   });
 });`} />
             <SnippetBlock title="Data-Driven Form Validation" code={`const invalidInputs = [
