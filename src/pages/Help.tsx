@@ -825,15 +825,28 @@ test('GET /api/products — matches schema', { tag: ['@api'] }, async ({ request
             <SnippetBlock title="API Setup → UI Verification (Hybrid)" code={`test('create via API, verify in UI', {
   tag: ['@e2e', '@critical'],
 }, async ({ page, request }) => {
+  test.info().annotations.push({ type: 'severity', description: 'critical' });
+
   const res = await request.post('/api/products', {
     data: { name: 'Widget Pro', price: 29.99, category: 'gadgets' },
   });
   const { id } = await res.json();
 
-  await page.goto('/products');
-  await page.fill('.search-input', 'Widget Pro');
-  await expect(page.locator(\`[data-product-id="\${id}"]\`)).toBeVisible();
-  await expect(page.locator(\`[data-product-id="\${id}"] .price\`)).toHaveText('$29.99');
+  test.info().attach('api-payload', {
+    contentType: 'application/json',
+    body: Buffer.from(JSON.stringify({
+      method: 'POST', url: '/api/products', statusCode: res.status(),
+      requestBody: { name: 'Widget Pro', price: 29.99 },
+      responseBody: { id },
+    })),
+  });
+
+  await test.step('Verify product appears in UI', async () => {
+    await page.goto('/products');
+    await page.fill('.search-input', 'Widget Pro');
+    await expect(page.locator(\`[data-product-id="\${id}"]\`)).toBeVisible();
+    await expect(page.locator(\`[data-product-id="\${id}"] .price\`)).toHaveText('$29.99');
+  });
 
   await request.delete(\`/api/products/\${id}\`);
 });`} />
