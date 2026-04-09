@@ -16,6 +16,7 @@ import SuiteDetail from "./pages/SuiteDetail.tsx";
 import EnvironmentsPage from "./pages/Environments.tsx";
 import HelpPage from "./pages/Help.tsx";
 import AboutPage from "./pages/About.tsx";
+import TestsPage from "./pages/Tests.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
               <Route path="/insights" element={<Insights />} />
               <Route path="/test/:testName" element={<TestDetail />} />
               <Route path="/suite/:suiteName" element={<SuiteDetail />} />
+              <Route path="/tests" element={<TestsPage />} />
               <Route path="/environments" element={<EnvironmentsPage />} />
               <Route path="/export/suite/:suiteName" element={<SuiteExportPage />} />
               <Route path="/export/:runId" element={<ExportPage />} />
