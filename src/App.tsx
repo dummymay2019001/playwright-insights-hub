@@ -16,6 +16,7 @@ import SuiteDetail from "./pages/SuiteDetail.tsx";
 import EnvironmentsPage from "./pages/Environments.tsx";
 import HelpPage from "./pages/Help.tsx";
 import AboutPage from "./pages/About.tsx";
+import TestsPage from "./pages/Tests.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
