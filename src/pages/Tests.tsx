@@ -1,11 +1,11 @@
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRuns } from "@/store/RunsContext";
-import { TestResult, TestStatus } from "@/models/types";
-import { TestRow } from "@/components/TestRow";
+import { TestStatus } from "@/models/types";
 import { useSearchPagination, SearchPaginationBar } from "@/components/SearchPagination";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/StatusBadge";
 import {
   Select,
   SelectContent,
@@ -13,68 +13,125 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
+interface UniqueTest {
+  name: string;
+  suite: string;
+  tags: string[];
+  latestStatus: TestStatus;
+  lastDuration: number;
+  totalRuns: number;
+  passCount: number;
+  failCount: number;
+  skipCount: number;
+  avgDuration: number;
+  flaky: boolean;
+}
 
 const STATUS_OPTIONS: { label: string; value: TestStatus | "all" }[] = [
   { label: "All", value: "all" },
   { label: "Passed", value: "passed" },
   { label: "Failed", value: "failed" },
   { label: "Skipped", value: "skipped" },
+  { label: "Flaky", value: "flaky" as any },
 ];
 
 const TestsPage = () => {
   const { runs, loading } = useRuns();
   const navigate = useNavigate();
-  const [statusFilter, setStatusFilter] = useState<TestStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [suiteFilter, setSuiteFilter] = useState<string>("all");
   const [tagFilter, setTagFilter] = useState<string>("all");
 
-  // Aggregate all tests from the latest run per runId (avoid duplication)
-  const { allTests, suites, tags } = useMemo(() => {
-    const tests: (TestResult & { runId: string })[] = [];
+  // Build unique tests map: one entry per test name, aggregated across runs
+  const { uniqueTests, suites, tags } = useMemo(() => {
+    const map = new Map<string, UniqueTest>();
     const suiteSet = new Set<string>();
     const tagSet = new Set<string>();
 
-    for (const run of runs) {
+    // Sort runs oldest → newest so latest overwrites
+    const sorted = [...runs].sort(
+      (a, b) => new Date(a.manifest.timestamp).getTime() - new Date(b.manifest.timestamp).getTime()
+    );
+
+    for (const run of sorted) {
       for (const t of run.results) {
-        tests.push({ ...t, runId: run.manifest.runId });
         suiteSet.add(t.suite);
         for (const tag of t.tags) tagSet.add(tag);
+
+        const existing = map.get(t.name);
+        if (!existing) {
+          map.set(t.name, {
+            name: t.name,
+            suite: t.suite,
+            tags: [...t.tags],
+            latestStatus: t.status,
+            lastDuration: t.duration,
+            totalRuns: 1,
+            passCount: t.status === "passed" ? 1 : 0,
+            failCount: t.status === "failed" ? 1 : 0,
+            skipCount: t.status === "skipped" ? 1 : 0,
+            avgDuration: t.duration,
+            flaky: false,
+          });
+        } else {
+          existing.latestStatus = t.status;
+          existing.lastDuration = t.duration;
+          existing.totalRuns++;
+          if (t.status === "passed") existing.passCount++;
+          if (t.status === "failed") existing.failCount++;
+          if (t.status === "skipped") existing.skipCount++;
+          existing.avgDuration = Math.round(
+            (existing.avgDuration * (existing.totalRuns - 1) + t.duration) / existing.totalRuns
+          );
+          // Merge tags
+          for (const tag of t.tags) {
+            if (!existing.tags.includes(tag)) existing.tags.push(tag);
+          }
+          // Flaky = had both pass and fail
+          if (existing.passCount > 0 && existing.failCount > 0) existing.flaky = true;
+        }
       }
     }
 
     return {
-      allTests: tests,
+      uniqueTests: [...map.values()],
       suites: [...suiteSet].sort(),
       tags: [...tagSet].sort(),
     };
   }, [runs]);
 
   const filtered = useMemo(() => {
-    let list = allTests;
-    if (statusFilter !== "all") list = list.filter((t) => t.status === statusFilter);
+    let list = uniqueTests;
+    if (statusFilter === "flaky") {
+      list = list.filter((t) => t.flaky);
+    } else if (statusFilter !== "all") {
+      list = list.filter((t) => t.latestStatus === statusFilter);
+    }
     if (suiteFilter !== "all") list = list.filter((t) => t.suite === suiteFilter);
     if (tagFilter !== "all") list = list.filter((t) => t.tags.includes(tagFilter));
     return list;
-  }, [allTests, statusFilter, suiteFilter, tagFilter]);
+  }, [uniqueTests, statusFilter, suiteFilter, tagFilter]);
 
-  const searchKey = useCallback((t: TestResult & { runId: string }) => `${t.name} ${t.suite}`, []);
+  const searchKey = useCallback((t: UniqueTest) => `${t.name} ${t.suite} ${t.tags.join(" ")}`, []);
   const { search, setSearch, page, setPage, totalPages, paginated, totalFiltered } =
     useSearchPagination({ items: filtered, searchKey });
 
-  // Tag counts for quick pills
+  // Tag counts
   const tagCounts = useMemo(() => {
-    const map = new Map<string, { total: number; passed: number; failed: number }>();
-    for (const t of allTests) {
+    const m = new Map<string, { total: number; passed: number; failed: number }>();
+    for (const t of uniqueTests) {
       for (const tag of t.tags) {
-        const e = map.get(tag) || { total: 0, passed: 0, failed: 0 };
+        const e = m.get(tag) || { total: 0, passed: 0, failed: 0 };
         e.total++;
-        if (t.status === "passed") e.passed++;
-        if (t.status === "failed") e.failed++;
-        map.set(tag, e);
+        if (t.latestStatus === "passed") e.passed++;
+        if (t.latestStatus === "failed") e.failed++;
+        m.set(tag, e);
       }
     }
-    return map;
-  }, [allTests]);
+    return m;
+  }, [uniqueTests]);
 
   const activeFilters = [statusFilter !== "all", suiteFilter !== "all", tagFilter !== "all"].filter(Boolean).length;
 
@@ -92,9 +149,7 @@ const TestsPage = () => {
     );
   }
 
-  const passedCount = allTests.filter((t) => t.status === "passed").length;
-  const failedCount = allTests.filter((t) => t.status === "failed").length;
-  const skippedCount = allTests.filter((t) => t.status === "skipped").length;
+  const flakyCount = uniqueTests.filter((t) => t.flaky).length;
 
   return (
     <div className="container py-4 sm:py-6 space-y-4 sm:space-y-5">
@@ -103,19 +158,9 @@ const TestsPage = () => {
         <div>
           <h1 className="font-mono text-lg font-bold text-foreground">All Tests</h1>
           <p className="text-xs text-muted-foreground font-mono mt-0.5">
-            {allTests.length} tests across {runs.length} runs · {suites.length} suites · {tags.length} tags
+            {uniqueTests.length} unique tests · {suites.length} suites · {tags.length} tags
+            {flakyCount > 0 && <span className="text-warning ml-1">· {flakyCount} flaky</span>}
           </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="font-mono text-xs bg-success/10 text-success border-success/30">
-            ✓ {passedCount}
-          </Badge>
-          <Badge variant="outline" className="font-mono text-xs bg-destructive/10 text-destructive border-destructive/30">
-            ✗ {failedCount}
-          </Badge>
-          <Badge variant="outline" className="font-mono text-xs bg-muted text-muted-foreground">
-            ⊘ {skippedCount}
-          </Badge>
         </div>
       </div>
 
@@ -123,8 +168,7 @@ const TestsPage = () => {
       <div className="flex flex-wrap items-center gap-2 p-3 rounded-lg border bg-card">
         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider mr-1">Filters</span>
 
-        {/* Status */}
-        <div className="flex gap-1">
+        <div className="flex gap-1 flex-wrap">
           {STATUS_OPTIONS.map((f) => (
             <Button
               key={f.value}
@@ -140,7 +184,6 @@ const TestsPage = () => {
 
         <div className="w-px h-6 bg-border mx-1 hidden sm:block" />
 
-        {/* Suite filter */}
         <Select value={suiteFilter} onValueChange={setSuiteFilter}>
           <SelectTrigger className="w-[180px] h-8 font-mono text-xs">
             <SelectValue placeholder="Suite" />
@@ -148,14 +191,11 @@ const TestsPage = () => {
           <SelectContent>
             <SelectItem value="all">All Suites</SelectItem>
             {suites.map((s) => (
-              <SelectItem key={s} value={s}>
-                {s}
-              </SelectItem>
+              <SelectItem key={s} value={s}>{s}</SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        {/* Tag filter */}
         <Select value={tagFilter} onValueChange={setTagFilter}>
           <SelectTrigger className="w-[160px] h-8 font-mono text-xs">
             <SelectValue placeholder="Tag" />
@@ -165,9 +205,7 @@ const TestsPage = () => {
             {tags.map((tag) => {
               const c = tagCounts.get(tag);
               return (
-                <SelectItem key={tag} value={tag}>
-                  {tag} ({c?.total ?? 0})
-                </SelectItem>
+                <SelectItem key={tag} value={tag}>{tag} ({c?.total ?? 0})</SelectItem>
               );
             })}
           </SelectContent>
@@ -217,15 +255,13 @@ const TestsPage = () => {
         onPageChange={setPage}
         totalFiltered={totalFiltered}
         totalItems={filtered.length}
-        placeholder="Search tests by name or suite…"
+        placeholder="Search tests by name, suite, or tag…"
       />
 
-      {/* Test list */}
+      {/* Unique test list */}
       <div className="space-y-1">
-        {paginated.map((t: TestResult & { runId: string }) => (
-          <div key={`${t.runId}-${t.id}`} className="relative">
-            <TestRow test={t} runId={t.runId} />
-          </div>
+        {paginated.map((t: UniqueTest) => (
+          <UniqueTestRow key={t.name} test={t} onNavigate={() => navigate(`/test/${encodeURIComponent(t.name)}`)} />
         ))}
         {totalFiltered === 0 && (
           <div className="text-center py-12">
@@ -241,5 +277,64 @@ const TestsPage = () => {
     </div>
   );
 };
+
+function UniqueTestRow({ test: t, onNavigate }: { test: UniqueTest; onNavigate: () => void }) {
+  const passRate = t.totalRuns > 0 ? Math.round((t.passCount / t.totalRuns) * 100) : 0;
+
+  return (
+    <button
+      onClick={onNavigate}
+      className="w-full flex items-center gap-2 sm:gap-3 px-3 py-2 rounded-md border bg-card hover:bg-accent/40 transition-colors text-left group"
+    >
+      <StatusBadge status={t.latestStatus} />
+      <div className="flex-1 min-w-0">
+        <p className="font-mono text-xs sm:text-sm text-foreground truncate group-hover:text-primary transition-colors">
+          {t.name}
+        </p>
+        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+          <span className="text-[10px] text-muted-foreground font-mono">{t.suite}</span>
+          {t.tags.slice(0, 3).map((tag) => (
+            <Badge key={tag} variant="outline" className="font-mono text-[9px] px-1 py-0">{tag}</Badge>
+          ))}
+          {t.tags.length > 3 && (
+            <span className="text-[9px] text-muted-foreground">+{t.tags.length - 3}</span>
+          )}
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {t.flaky && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge variant="outline" className="font-mono text-[9px] border-warning/40 text-warning bg-warning/10">
+                ⚡ Flaky
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent className="font-mono text-xs">
+              Passed {t.passCount} / Failed {t.failCount} across {t.totalRuns} runs
+            </TooltipContent>
+          </Tooltip>
+        )}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className={`font-mono text-xs font-semibold ${passRate >= 95 ? "text-success" : passRate >= 80 ? "text-warning" : "text-destructive"}`}>
+              {passRate}%
+            </span>
+          </TooltipTrigger>
+          <TooltipContent className="font-mono text-xs">
+            {t.passCount}✓ {t.failCount}✗ {t.skipCount}⊘ across {t.totalRuns} runs
+          </TooltipContent>
+        </Tooltip>
+        <span className="font-mono text-[10px] text-muted-foreground hidden sm:inline">
+          {t.avgDuration < 1000 ? `${t.avgDuration}ms` : `${(t.avgDuration / 1000).toFixed(1)}s`}
+        </span>
+        <span className="font-mono text-[10px] text-muted-foreground">
+          {t.totalRuns} run{t.totalRuns !== 1 ? "s" : ""}
+        </span>
+      </div>
+    </button>
+  );
+}
 
 export default TestsPage;
