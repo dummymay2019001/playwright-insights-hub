@@ -698,6 +698,8 @@ test.describe('file-ops', { tag: '@regression' }, () => {
   let userId: string;
 
   test('POST /api/users — create', async ({ request }) => {
+    test.info().annotations.push({ type: 'severity', description: 'critical' });
+
     const res = await request.post('/api/users', {
       data: { name: 'Jane Doe', email: 'jane@test.com', role: 'admin' },
     });
@@ -705,12 +707,31 @@ test.describe('file-ops', { tag: '@regression' }, () => {
     const body = await res.json();
     expect(body).toHaveProperty('id');
     userId = body.id;
+
+    // Attach API payload for dashboard visibility
+    test.info().attach('api-payload', {
+      contentType: 'application/json',
+      body: Buffer.from(JSON.stringify({
+        method: 'POST', url: '/api/users',
+        statusCode: 201, requestBody: { name: 'Jane Doe', email: 'jane@test.com' },
+        responseBody: body,
+      })),
+    });
   });
 
   test('GET /api/users/:id — fetch', async ({ request }) => {
     const res = await request.get(\`/api/users/\${userId}\`);
     expect(res.status()).toBe(200);
-    expect((await res.json()).email).toBe('jane@test.com');
+    const body = await res.json();
+    expect(body.email).toBe('jane@test.com');
+
+    test.info().attach('api-payload', {
+      contentType: 'application/json',
+      body: Buffer.from(JSON.stringify({
+        method: 'GET', url: \`/api/users/\${userId}\`,
+        statusCode: 200, responseBody: body,
+      })),
+    });
   });
 
   test('DELETE /api/users/:id — remove', async ({ request }) => {
