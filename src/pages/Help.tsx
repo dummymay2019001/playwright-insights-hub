@@ -76,6 +76,9 @@ const difficultyColors: Record<string, string> = {
   Advanced: "text-destructive bg-destructive/10",
 };
 
+/* Lazy wrapper to avoid block-scoped reference issue */
+const PlaygroundGeneratorWrapper = () => <PlaygroundGenerator />;
+
 /* ─── All guide content ─── */
 
 const categories: GuideCategory[] = [
