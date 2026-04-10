@@ -124,8 +124,31 @@ const TestsPage = () => {
     }
     if (suiteFilter !== "all") list = list.filter((t) => t.suite === suiteFilter);
     if (tagFilter !== "all") list = list.filter((t) => t.tags.includes(tagFilter));
-    return list;
-  }, [uniqueTests, statusFilter, suiteFilter, tagFilter]);
+
+    // Sort
+    const sorted = [...list].sort((a, b) => {
+      let cmp = 0;
+      switch (sortField) {
+        case "name":
+          cmp = a.name.localeCompare(b.name);
+          break;
+        case "passRate": {
+          const rA = a.totalRuns > 0 ? a.passCount / a.totalRuns : 0;
+          const rB = b.totalRuns > 0 ? b.passCount / b.totalRuns : 0;
+          cmp = rA - rB;
+          break;
+        }
+        case "duration":
+          cmp = a.avgDuration - b.avgDuration;
+          break;
+        case "runs":
+          cmp = a.totalRuns - b.totalRuns;
+          break;
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return sorted;
+  }, [uniqueTests, statusFilter, suiteFilter, tagFilter, sortField, sortDir]);
 
   const searchKey = useCallback((t: UniqueTest) => `${t.name} ${t.suite} ${t.tags.join(" ")}`, []);
   const { search, setSearch, page, setPage, totalPages, paginated, totalFiltered } =
