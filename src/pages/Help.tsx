@@ -7,7 +7,11 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { Copy, Check } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Copy, Check, ArrowLeft, ChevronRight, Search } from "lucide-react";
+
+/* ─── Reusable blocks ─── */
 
 const CodeBlock = ({ children, title }: { children: string; title?: string }) => (
   <div className="rounded-lg border bg-muted/50 overflow-hidden">
@@ -19,27 +23,13 @@ const CodeBlock = ({ children, title }: { children: string; title?: string }) =>
 const Tip = ({ icon = "💡", variant = "primary", children }: { icon?: string; variant?: "primary" | "warning" | "success"; children: React.ReactNode }) => {
   const bg = variant === "warning" ? "bg-warning/10 border-warning/30" : variant === "success" ? "bg-success/10 border-success/30" : "bg-primary/5 border-primary/20";
   return (
-    <div className={`flex items-start gap-2 p-3 rounded-md ${bg}`}>
+    <div className={`flex items-start gap-2 p-3 rounded-md border ${bg}`}>
       <span className="text-sm">{icon}</span>
       <p className="text-xs text-muted-foreground">{children}</p>
     </div>
   );
 };
 
-/* ─── Section Header ─── */
-const SectionHeader = ({ icon, title, description }: { icon: string; title: string; description: string }) => (
-  <div className="flex items-start gap-3 pt-4 pb-2">
-    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-      <span className="text-lg">{icon}</span>
-    </div>
-    <div>
-      <h2 className="font-mono text-sm sm:text-base font-bold text-foreground">{title}</h2>
-      <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
-    </div>
-  </div>
-);
-
-/* ─── Copyable Snippet Block ─── */
 const SnippetBlock = ({ title, code }: { title: string; code: string }) => {
   const [copied, setCopied] = useState(false);
   const handleCopy = () => {
@@ -60,25 +50,53 @@ const SnippetBlock = ({ title, code }: { title: string; code: string }) => {
   );
 };
 
-const HelpPage = () => {
-  return (
-    <div className="container py-4 sm:py-6 space-y-2 sm:space-y-3 max-w-4xl">
-      <div>
-        <h1 className="font-mono text-lg sm:text-xl font-bold text-foreground">Playwright Intelligence — Guide</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Everything you need to structure tests, import results, export reports, and integrate with your workflow.
-        </p>
-      </div>
+/* ─── Guide data structure ─── */
 
-      {/* ───────────── SECTION 1: Getting Started ───────────── */}
-      <SectionHeader icon="🚀" title="Getting Started" description="Setup, file formats, and importing your first results" />
+interface GuideItem {
+  id: string;
+  icon: string;
+  title: string;
+  summary: string;
+  difficulty: "Beginner" | "Intermediate" | "Advanced";
+  content: React.ReactNode;
+}
 
-      <Accordion type="multiple" defaultValue={["getting-started"]} className="space-y-2">
-        <AccordionItem value="getting-started" className="rounded-lg border bg-card px-4 sm:px-6">
-          <AccordionTrigger className="font-mono text-sm font-semibold text-foreground hover:no-underline py-3">
-            <span className="flex items-center gap-2"><span>🚀</span> Quick Start</span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-4 pb-4">
+interface GuideCategory {
+  id: string;
+  icon: string;
+  title: string;
+  description: string;
+  color: string;
+  guides: GuideItem[];
+}
+
+const difficultyColors: Record<string, string> = {
+  Beginner: "text-success bg-success/10",
+  Intermediate: "text-warning bg-warning/10",
+  Advanced: "text-destructive bg-destructive/10",
+};
+
+/* Lazy wrapper to avoid block-scoped reference issue */
+const PlaygroundGeneratorWrapper = () => <PlaygroundGenerator />;
+
+/* ─── All guide content ─── */
+
+const categories: GuideCategory[] = [
+  {
+    id: "getting-started",
+    icon: "🚀",
+    title: "Getting Started",
+    description: "Setup, file formats, and importing your first results",
+    color: "text-primary",
+    guides: [
+      {
+        id: "quick-start",
+        icon: "🚀",
+        title: "Quick Start",
+        summary: "Get your first results imported in under 2 minutes",
+        difficulty: "Beginner",
+        content: (
+          <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               The fastest way to get started is using Playwright's built-in JSON reporter. No custom reporter needed!
             </p>
@@ -91,14 +109,17 @@ export default defineConfig({
             <Tip variant="success" icon="✅">
               <strong className="text-foreground">Just import the file!</strong> Drop <code className="font-mono bg-muted px-1 rounded">results.json</code> onto the dashboard. Native Playwright format is auto-detected.
             </Tip>
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="formats" className="rounded-lg border bg-card px-4 sm:px-6">
-          <AccordionTrigger className="font-mono text-sm font-semibold text-foreground hover:no-underline py-3">
-            <span className="flex items-center gap-2"><span>📁</span> Supported File Formats</span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-4 pb-4">
+          </div>
+        ),
+      },
+      {
+        id: "formats",
+        icon: "📁",
+        title: "Supported File Formats",
+        summary: "All import formats — single file, multi-run, folder, and flat arrays",
+        difficulty: "Beginner",
+        content: (
+          <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Multiple import formats are supported. Drop files or folders directly on the dashboard.
             </p>
@@ -125,14 +146,17 @@ export default defineConfig({
             <Tip icon="🔄" variant="success">
               <strong className="text-foreground">Persistence:</strong> Imported runs are saved to localStorage. They persist across reloads. Use "Reset Demo" to return to sample data.
             </Tip>
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="schema" className="rounded-lg border bg-card px-4 sm:px-6">
-          <AccordionTrigger className="font-mono text-sm font-semibold text-foreground hover:no-underline py-3">
-            <span className="flex items-center gap-2"><span>📋</span> Schema Reference</span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-4 pb-4">
+          </div>
+        ),
+      },
+      {
+        id: "schema",
+        icon: "📋",
+        title: "Schema Reference",
+        summary: "Complete field-by-field reference for TestResult and TestStep",
+        difficulty: "Intermediate",
+        content: (
+          <div className="space-y-4">
             <div className="space-y-3">
               <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">TestResult Fields</h3>
               <div className="rounded-lg border overflow-hidden">
@@ -165,19 +189,26 @@ export default defineConfig({
                 </table>
               </div>
             </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-
-      {/* ───────────── SECTION 2: Test Authoring ───────────── */}
-      <SectionHeader icon="✍️" title="Test Authoring" description="Suites, tags, severity, steps, naming — write tests the dashboard loves" />
-
-      <Accordion type="multiple" className="space-y-2">
-        <AccordionItem value="suites" className="rounded-lg border bg-card px-4 sm:px-6">
-          <AccordionTrigger className="font-mono text-sm font-semibold text-foreground hover:no-underline py-3">
-            <span className="flex items-center gap-2"><span>📂</span> Structuring Test Suites</span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-4 pb-4">
+          </div>
+        ),
+      },
+    ],
+  },
+  {
+    id: "test-authoring",
+    icon: "✍️",
+    title: "Test Authoring",
+    description: "Suites, tags, severity, steps, naming — write tests the dashboard loves",
+    color: "text-warning",
+    guides: [
+      {
+        id: "suites",
+        icon: "📂",
+        title: "Structuring Test Suites",
+        summary: "Map describe() blocks to suites for clean organization",
+        difficulty: "Beginner",
+        content: (
+          <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Each <code className="font-mono text-xs bg-muted px-1 py-0.5 rounded">describe()</code> block maps to a suite.
             </p>
@@ -201,14 +232,17 @@ test.describe('auth', () => {
   });
 });`}</CodeBlock>
             <Tip><strong className="text-foreground">Best practice:</strong> Keep suite names lowercase and descriptive. Use one file per suite for clean file-based grouping.</Tip>
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="tags" className="rounded-lg border bg-card px-4 sm:px-6">
-          <AccordionTrigger className="font-mono text-sm font-semibold text-foreground hover:no-underline py-3">
-            <span className="flex items-center gap-2"><span>🏷️</span> Using Tags for Filtering</span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-4 pb-4">
+          </div>
+        ),
+      },
+      {
+        id: "tags",
+        icon: "🏷️",
+        title: "Using Tags for Filtering",
+        summary: "Tag tests and suites for flexible filtering and reporting",
+        difficulty: "Beginner",
+        content: (
+          <div className="space-y-4">
             <CodeBlock title="tests/checkout.spec.ts">{`// Tag individual tests
 test('add to cart', { tag: ['@smoke', '@critical'] }, async ({ page }) => {
   await page.goto('/products');
@@ -229,14 +263,17 @@ test.describe('payment', { tag: '@regression' }, () => {
                 </div>
               ))}
             </div>
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="severity" className="rounded-lg border bg-card px-4 sm:px-6">
-          <AccordionTrigger className="font-mono text-sm font-semibold text-foreground hover:no-underline py-3">
-            <span className="flex items-center gap-2"><span>🎯</span> Severity Levels</span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-4 pb-4">
+          </div>
+        ),
+      },
+      {
+        id: "severity",
+        icon: "🎯",
+        title: "Severity Levels",
+        summary: "Prioritize failures with blocker/critical/normal/minor/trivial",
+        difficulty: "Intermediate",
+        content: (
+          <div className="space-y-4">
             <div className="rounded-lg border overflow-hidden">
               <table className="w-full text-xs font-mono">
                 <thead><tr className="bg-muted"><th className="text-left px-3 py-2 text-muted-foreground font-medium">Level</th><th className="text-left px-3 py-2 text-muted-foreground font-medium">Icon</th><th className="text-left px-3 py-2 text-muted-foreground font-medium">When to Use</th></tr></thead>
@@ -256,14 +293,17 @@ test('checkout', async ({ page }) => {
 });
 
 // Auto-inference: @smoke/@p0 → critical, @regression/@p1 → normal`}</CodeBlock>
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="test-steps" className="rounded-lg border bg-card px-4 sm:px-6">
-          <AccordionTrigger className="font-mono text-sm font-semibold text-foreground hover:no-underline py-3">
-            <span className="flex items-center gap-2"><span>📝</span> Test Steps</span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-4 pb-4">
+          </div>
+        ),
+      },
+      {
+        id: "test-steps",
+        icon: "📝",
+        title: "Test Steps",
+        summary: "Break tests into steps for detailed failure pinpointing",
+        difficulty: "Beginner",
+        content: (
+          <div className="space-y-4">
             <CodeBlock title="Using test.step() for detailed breakdown">{`test('complete checkout flow', async ({ page }) => {
   await test.step('Navigate to products', async () => {
     await page.goto('/products');
@@ -291,14 +331,17 @@ test('checkout', async ({ page }) => {
                 <div className="text-destructive/70 text-[10px] ml-4">Element not found: #pay-btn</div>
               </div>
             </div>
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="naming" className="rounded-lg border bg-card px-4 sm:px-6">
-          <AccordionTrigger className="font-mono text-sm font-semibold text-foreground hover:no-underline py-3">
-            <span className="flex items-center gap-2"><span>✏️</span> Naming Conventions</span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-4 pb-4">
+          </div>
+        ),
+      },
+      {
+        id: "naming",
+        icon: "✏️",
+        title: "Naming Conventions",
+        summary: "Best practices for test and suite naming",
+        difficulty: "Beginner",
+        content: (
+          <div className="space-y-4">
             <CodeBlock title="Recommended naming">{`// ✅ Good — clear suite > test pattern
 test.describe('auth', () => {
   test('login with valid credentials', ...);
@@ -317,19 +360,26 @@ test.describe('checkout', () => {
 test.describe('auth', () => {
   test('auth login works', ...); // "auth" is duplicated
 });`}</CodeBlock>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-
-      {/* ───────────── SECTION 3: Analysis & Debugging ───────────── */}
-      <SectionHeader icon="🔬" title="Analysis & Debugging" description="Defect categories, failure analysis, environments, logs, and retries" />
-
-      <Accordion type="multiple" className="space-y-2">
-        <AccordionItem value="defect-categories" className="rounded-lg border bg-card px-4 sm:px-6">
-          <AccordionTrigger className="font-mono text-sm font-semibold text-foreground hover:no-underline py-3">
-            <span className="flex items-center gap-2"><span>🐛</span> Defect Categories</span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-4 pb-4">
+          </div>
+        ),
+      },
+    ],
+  },
+  {
+    id: "analysis",
+    icon: "🔬",
+    title: "Analysis & Debugging",
+    description: "Defect categories, failure analysis, environments, logs, and retries",
+    color: "text-destructive",
+    guides: [
+      {
+        id: "defect-categories",
+        icon: "🐛",
+        title: "Defect Categories",
+        summary: "Understand product, test, and infrastructure defect classification",
+        difficulty: "Intermediate",
+        content: (
+          <div className="space-y-4">
             <div className="rounded-lg border overflow-hidden">
               <table className="w-full text-xs font-mono">
                 <thead><tr className="bg-muted"><th className="text-left px-3 py-2 text-muted-foreground font-medium">Category</th><th className="text-left px-3 py-2 text-muted-foreground font-medium">Meaning</th><th className="text-left px-3 py-2 text-muted-foreground font-medium">Example</th></tr></thead>
@@ -348,14 +398,17 @@ const title = await page.locator('.missing').textContent();
 
 // ✅ Infrastructure — caught as timeout
 await page.locator('.slow-btn').click({ timeout: 5000 });`}</CodeBlock>
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="failure-analysis" className="rounded-lg border bg-card px-4 sm:px-6">
-          <AccordionTrigger className="font-mono text-sm font-semibold text-foreground hover:no-underline py-3">
-            <span className="flex items-center gap-2"><span>🔬</span> Failure Cause Analysis & Trends</span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-4 pb-4">
+          </div>
+        ),
+      },
+      {
+        id: "failure-analysis",
+        icon: "🔬",
+        title: "Failure Cause Analysis & Trends",
+        summary: "How failure causes are detected and surfaced on test detail pages",
+        difficulty: "Intermediate",
+        content: (
+          <div className="space-y-4">
             <div className="rounded-lg border overflow-hidden">
               <table className="w-full text-xs font-mono">
                 <thead><tr className="bg-muted"><th className="text-left px-3 py-2 text-muted-foreground font-medium">Category</th><th className="text-left px-3 py-2 text-muted-foreground font-medium">Detected By</th><th className="text-left px-3 py-2 text-muted-foreground font-medium">Example</th></tr></thead>
@@ -369,14 +422,17 @@ await page.locator('.slow-btn').click({ timeout: 5000 });`}</CodeBlock>
             <Tip variant="success" icon="📊">
               <strong className="text-foreground">What you get:</strong> Status Timeline, Failure Cause Analysis with frequency, sample errors, and actionable fix suggestions — all on each test's detail page.
             </Tip>
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="environments" className="rounded-lg border bg-card px-4 sm:px-6">
-          <AccordionTrigger className="font-mono text-sm font-semibold text-foreground hover:no-underline py-3">
-            <span className="flex items-center gap-2"><span>🌐</span> Environment Comparison</span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-4 pb-4">
+          </div>
+        ),
+      },
+      {
+        id: "environments",
+        icon: "🌐",
+        title: "Environment Comparison",
+        summary: "Configure and compare test results across staging/production",
+        difficulty: "Intermediate",
+        content: (
+          <div className="space-y-4">
             <CodeBlock title="Setting environment in your config">{`// playwright.config.ts
 export default defineConfig({
   projects: [
@@ -385,21 +441,33 @@ export default defineConfig({
   ],
 });`}</CodeBlock>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {[{ icon: "📊", title: "Per-env pass rates", desc: "Which environments are most stable" }, { icon: "🔀", title: "Cross-env failures", desc: "Tests passing in one env but failing in another" }, { icon: "🐛", title: "Env-specific defects", desc: "Categorized by product/test/infrastructure" }, { icon: "📈", title: "Trend per environment", desc: "Track stability per environment" }].map(item => (
-                <div key={item.title} className="flex items-start gap-2 p-3 rounded-md border bg-muted/30">
-                  <span>{item.icon}</span>
-                  <div><p className="text-xs font-medium text-foreground">{item.title}</p><p className="text-[10px] text-muted-foreground">{item.desc}</p></div>
+              {[{ env: "staging", pass: 45, fail: 5, skip: 2 }, { env: "production", pass: 48, fail: 2, skip: 2 }].map(({ env, pass, fail, skip }) => (
+                <div key={env} className="rounded-lg border p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-sm font-semibold text-foreground">{env}</span>
+                    <span className={`font-mono text-xs font-bold ${Math.round((pass / (pass + fail + skip)) * 100) >= 95 ? "text-success" : "text-warning"}`}>
+                      {Math.round((pass / (pass + fail + skip)) * 100)}%
+                    </span>
+                  </div>
+                  <div className="flex gap-2 text-[10px] font-mono text-muted-foreground">
+                    <span className="text-success">{pass} ✓</span>
+                    <span className="text-destructive">{fail} ✗</span>
+                    <span>{skip} ⊘</span>
+                  </div>
                 </div>
               ))}
             </div>
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="logs" className="rounded-lg border bg-card px-4 sm:px-6">
-          <AccordionTrigger className="font-mono text-sm font-semibold text-foreground hover:no-underline py-3">
-            <span className="flex items-center gap-2"><span>📝</span> Console Logs & Error Rendering</span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-4 pb-4">
+          </div>
+        ),
+      },
+      {
+        id: "logs",
+        icon: "📝",
+        title: "Console Logs & Error Rendering",
+        summary: "Structured log prefixes for beautiful console output",
+        difficulty: "Beginner",
+        content: (
+          <div className="space-y-4">
             <CodeBlock title="Structured log prefixes">{`test('checkout flow', async ({ page }) => {
   console.log('[INFO] Starting checkout flow');
   console.log('[WARN] Slow response detected (2500ms)');
@@ -415,14 +483,17 @@ export default defineConfig({
                 <p className="text-muted-foreground/60">[DEBUG] Cart state: {"{ items: 3, total: 49.99 }"}</p>
               </div>
             </div>
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="retries" className="rounded-lg border bg-card px-4 sm:px-6">
-          <AccordionTrigger className="font-mono text-sm font-semibold text-foreground hover:no-underline py-3">
-            <span className="flex items-center gap-2"><span>⚡</span> Retries & Flaky Detection</span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-4 pb-4">
+          </div>
+        ),
+      },
+      {
+        id: "retries",
+        icon: "⚡",
+        title: "Retries & Flaky Detection",
+        summary: "Configure retries and understand flaky test detection",
+        difficulty: "Beginner",
+        content: (
+          <div className="space-y-4">
             <CodeBlock title="playwright.config.ts">{`export default defineConfig({
   retries: 2,  // Retry failed tests up to 2 times
   projects: [
@@ -432,19 +503,26 @@ export default defineConfig({
             <Tip variant="warning" icon="⚡">
               <strong className="text-foreground">Flaky detection:</strong> A test is marked flaky if it has retries &gt; 0 across 2+ runs. The Insights panel surfaces the most flaky tests with fix recommendations.
             </Tip>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-
-      {/* ───────────── SECTION 4: Reporting & Exports ───────────── */}
-      <SectionHeader icon="📄" title="Reporting & Exports" description="Run reports, suite reports, custom reporters, and API payloads" />
-
-      <Accordion type="multiple" className="space-y-2">
-        <AccordionItem value="reports" className="rounded-lg border bg-card px-4 sm:px-6">
-          <AccordionTrigger className="font-mono text-sm font-semibold text-foreground hover:no-underline py-3">
-            <span className="flex items-center gap-2"><span>📄</span> Run Reports vs Suite Reports</span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-4 pb-4">
+          </div>
+        ),
+      },
+    ],
+  },
+  {
+    id: "reporting",
+    icon: "📄",
+    title: "Reporting & Exports",
+    description: "Run reports, suite reports, custom reporters, and API payloads",
+    color: "text-success",
+    guides: [
+      {
+        id: "reports",
+        icon: "📄",
+        title: "Run Reports vs Suite Reports",
+        summary: "When to use single-run snapshots vs multi-run suite analysis",
+        difficulty: "Beginner",
+        content: (
+          <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="rounded-lg border p-4 space-y-2">
                 <div className="flex items-center gap-2"><span className="text-lg">📋</span><h3 className="text-sm font-semibold text-foreground">Run Report</h3></div>
@@ -478,14 +556,17 @@ export default defineConfig({
                 </tbody>
               </table>
             </div>
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="api" className="rounded-lg border bg-card px-4 sm:px-6">
-          <AccordionTrigger className="font-mono text-sm font-semibold text-foreground hover:no-underline py-3">
-            <span className="flex items-center gap-2"><span>🔗</span> API Request & Response Payloads</span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-4 pb-4">
+          </div>
+        ),
+      },
+      {
+        id: "api-payloads",
+        icon: "🔗",
+        title: "API Request & Response Payloads",
+        summary: "Attach API call details to tests for dashboard visibility",
+        difficulty: "Intermediate",
+        content: (
+          <div className="space-y-4">
             <CodeBlock title="Capturing API calls">{`test('POST /orders', { tag: ['@api'] }, async ({ request }) => {
   const payload = { productId: 'sku-123', quantity: 2 };
   const response = await request.post('/api/v1/orders', { data: payload });
@@ -501,14 +582,17 @@ export default defineConfig({
   });
   expect(response.ok()).toBeTruthy();
 });`}</CodeBlock>
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="reporter" className="rounded-lg border bg-card px-4 sm:px-6">
-          <AccordionTrigger className="font-mono text-sm font-semibold text-foreground hover:no-underline py-3">
-            <span className="flex items-center gap-2"><span>🔌</span> Custom Playwright Reporter</span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-4 pb-4">
+          </div>
+        ),
+      },
+      {
+        id: "reporter",
+        icon: "🔌",
+        title: "Custom Playwright Reporter",
+        summary: "Build a reporter that outputs dashboard-compatible JSON",
+        difficulty: "Advanced",
+        content: (
+          <div className="space-y-4">
             <CodeBlock title="reporters/dashboard-reporter.ts">{`import { Reporter, TestCase, TestResult as PWResult, FullResult } from '@playwright/test/reporter';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -561,19 +645,26 @@ class DashboardReporter implements Reporter {
 }
 export default DashboardReporter;`}</CodeBlock>
             <Tip><strong className="text-foreground">CI Integration:</strong> Set <code className="font-mono bg-muted px-1 rounded">GIT_BRANCH</code> and <code className="font-mono bg-muted px-1 rounded">TEST_ENV</code> env vars in CI to auto-tag runs.</Tip>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-
-      {/* ───────────── SECTION 5: Code Snippets & Examples ───────────── */}
-      <SectionHeader icon="💻" title="Code Snippets & Examples" description="Copy-paste-ready recipes for UI, API, and integration testing" />
-
-      <Accordion type="multiple" className="space-y-2">
-        <AccordionItem value="snippets-ui" className="rounded-lg border bg-card px-4 sm:px-6">
-          <AccordionTrigger className="font-mono text-sm font-semibold text-foreground hover:no-underline py-3">
-            <span className="flex items-center gap-2"><span>🖥️</span> UI Automation Examples</span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-4 pb-4">
+          </div>
+        ),
+      },
+    ],
+  },
+  {
+    id: "snippets",
+    icon: "💻",
+    title: "Code Snippets & Examples",
+    description: "Copy-paste-ready recipes for UI, API, and integration testing",
+    color: "text-primary",
+    guides: [
+      {
+        id: "snippets-ui",
+        icon: "🖥️",
+        title: "UI Automation Examples",
+        summary: "Login POM, data-driven forms, visual regression, file ops, OAuth popup",
+        difficulty: "Intermediate",
+        content: (
+          <div className="space-y-4">
             <SnippetBlock title="Login with Page Object Model" code={`// pages/LoginPage.ts
 import { Page, Locator, expect } from '@playwright/test';
 
@@ -686,14 +777,17 @@ test.describe('file-ops', { tag: '@regression' }, () => {
   await page.waitForURL('/dashboard');
   await expect(page.locator('.user-avatar')).toBeVisible();
 });`} />
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="snippets-api" className="rounded-lg border bg-card px-4 sm:px-6">
-          <AccordionTrigger className="font-mono text-sm font-semibold text-foreground hover:no-underline py-3">
-            <span className="flex items-center gap-2"><span>🔗</span> API Automation Examples</span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-4 pb-4">
+          </div>
+        ),
+      },
+      {
+        id: "snippets-api",
+        icon: "🔗",
+        title: "API Automation Examples",
+        summary: "CRUD, auth tokens, schema validation, GraphQL, performance",
+        difficulty: "Intermediate",
+        content: (
+          <div className="space-y-4">
             <SnippetBlock title="CRUD API Testing" code={`test.describe('users-api', { tag: ['@api', '@critical'] }, () => {
   let userId: string;
 
@@ -814,14 +908,17 @@ test('GET /api/products — matches schema', { tag: ['@api'] }, async ({ request
     })),
   });
 });`} />
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="snippets-integration" className="rounded-lg border bg-card px-4 sm:px-6">
-          <AccordionTrigger className="font-mono text-sm font-semibold text-foreground hover:no-underline py-3">
-            <span className="flex items-center gap-2"><span>🔄</span> Integration & E2E Patterns</span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-4 pb-4">
+          </div>
+        ),
+      },
+      {
+        id: "snippets-integration",
+        icon: "🔄",
+        title: "Integration & E2E Patterns",
+        summary: "API setup → UI verification, database seeding with fixtures",
+        difficulty: "Advanced",
+        content: (
+          <div className="space-y-4">
             <SnippetBlock title="API Setup → UI Verification (Hybrid)" code={`test('create via API, verify in UI', {
   tag: ['@e2e', '@critical'],
 }, async ({ page, request }) => {
@@ -868,23 +965,29 @@ test('new user onboarding', async ({ page, testUser }) => {
   await page.click('button[type="submit"]');
   await expect(page.locator('.onboarding-wizard')).toBeVisible();
 });`} />
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-
-      {/* ───────────── SECTION 6: CI/CD Integrations ───────────── */}
-      <SectionHeader icon="🔄" title="CI/CD & Tool Integrations" description="Push results to Azure DevOps, Jira, and CI pipelines" />
-
-      <Accordion type="multiple" className="space-y-2">
-        <AccordionItem value="ado-integration" className="rounded-lg border bg-card px-4 sm:px-6">
-          <AccordionTrigger className="font-mono text-sm font-semibold text-foreground hover:no-underline py-3">
-            <span className="flex items-center gap-2"><span>🔷</span> Azure DevOps — Update Test Runs</span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-4 pb-4">
+          </div>
+        ),
+      },
+    ],
+  },
+  {
+    id: "ci-cd",
+    icon: "🔄",
+    title: "CI/CD & Tool Integrations",
+    description: "Push results to Azure DevOps, Jira, and CI pipelines",
+    color: "text-muted-foreground",
+    guides: [
+      {
+        id: "ado-integration",
+        icon: "🔷",
+        title: "Azure DevOps — Update Test Runs",
+        summary: "Publish individual results and suite runs to ADO Test Plans",
+        difficulty: "Advanced",
+        content: (
+          <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Push individual test results or full suite runs to Azure DevOps Test Plans after Playwright execution.
             </p>
-
             <SnippetBlock title="scripts/publish-to-ado.ts — Individual Test Results" code={`import * as fs from 'fs';
 
 const ORG = process.env.ADO_ORG!;         // e.g. 'my-org'
@@ -1008,18 +1111,20 @@ publishSuiteToADO(process.argv[2] || 'auth');`} />
             <Tip variant="success" icon="🔷">
               <strong className="text-foreground">CI Usage:</strong> Add to your pipeline after Playwright runs: <code className="font-mono bg-muted px-1 rounded">npx ts-node scripts/publish-to-ado.ts</code>. Set <code className="font-mono bg-muted px-1 rounded">ADO_PAT</code>, <code className="font-mono bg-muted px-1 rounded">ADO_ORG</code>, <code className="font-mono bg-muted px-1 rounded">ADO_PROJECT</code> as pipeline secrets.
             </Tip>
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="jira-integration" className="rounded-lg border bg-card px-4 sm:px-6">
-          <AccordionTrigger className="font-mono text-sm font-semibold text-foreground hover:no-underline py-3">
-            <span className="flex items-center gap-2"><span>🟦</span> Jira — Create Issues from Failures</span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-4 pb-4">
+          </div>
+        ),
+      },
+      {
+        id: "jira-integration",
+        icon: "🟦",
+        title: "Jira — Create Issues from Failures",
+        summary: "Auto-create bug tickets and attach suite summaries to Jira",
+        difficulty: "Advanced",
+        content: (
+          <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Automatically create Jira issues for failed tests or attach run summaries to existing tickets.
             </p>
-
             <SnippetBlock title="scripts/publish-failures-to-jira.ts — Individual Failures" code={`import * as fs from 'fs';
 
 const JIRA_URL = process.env.JIRA_URL!;       // e.g. 'https://myteam.atlassian.net'
@@ -1146,14 +1251,17 @@ addSuiteSummaryToJira(process.argv[2], process.argv[3] || 'auth');`} />
             <Tip variant="success" icon="🟦">
               <strong className="text-foreground">Two modes:</strong> Use the first script to auto-create bug tickets for each failure (with duplicate check). Use the second to attach suite summaries as comments on existing sprint/release tickets.
             </Tip>
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="ci-pipeline" className="rounded-lg border bg-card px-4 sm:px-6">
-          <AccordionTrigger className="font-mono text-sm font-semibold text-foreground hover:no-underline py-3">
-            <span className="flex items-center gap-2"><span>⚙️</span> CI Pipeline Examples</span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-4 pb-4">
+          </div>
+        ),
+      },
+      {
+        id: "ci-pipeline",
+        icon: "⚙️",
+        title: "CI Pipeline Examples",
+        summary: "GitHub Actions and Azure DevOps pipeline YAML configs",
+        difficulty: "Intermediate",
+        content: (
+          <div className="space-y-4">
             <SnippetBlock title="GitHub Actions — Run + Publish to ADO" code={`# .github/workflows/test.yml
 name: Playwright Tests
 on: [push, pull_request]
@@ -1229,26 +1337,174 @@ steps:
 
   - publish: results.json
     artifact: TestResults`} />
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+          </div>
+        ),
+      },
+    ],
+  },
+  {
+    id: "playground",
+    icon: "🎮",
+    title: "Code Playground",
+    description: "Generate Playwright config and test files based on your preferences",
+    color: "text-primary",
+    guides: [
+      {
+        id: "playground-generator",
+        icon: "🎮",
+        title: "Interactive Config Generator",
+        summary: "Select options and get ready-to-use Playwright config and test files",
+        difficulty: "Beginner",
+        content: <PlaygroundGeneratorWrapper />,
+      },
+    ],
+  },
+];
 
-      {/* ───────────── SECTION 7: Code Playground ───────────── */}
-      <SectionHeader icon="🎮" title="Code Playground" description="Generate Playwright config and test files based on your preferences" />
+/* ─── Main Page Component ─── */
 
-      <Accordion type="multiple" className="space-y-2">
-        <AccordionItem value="playground" className="rounded-lg border bg-card px-4 sm:px-6">
-          <AccordionTrigger className="font-mono text-sm font-semibold text-foreground hover:no-underline py-3">
-            <span className="flex items-center gap-2"><span>🎮</span> Interactive Config Generator</span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-4 pb-4">
-            <p className="text-sm text-muted-foreground">
-              Configure your test setup and get ready-to-use code. Select options and copy the output.
-            </p>
-            <PlaygroundGenerator />
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+const HelpPage = () => {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedGuide, setSelectedGuide] = useState<GuideItem | null>(null);
+  const [search, setSearch] = useState("");
+
+  const currentCategory = categories.find(c => c.id === selectedCategory);
+
+  const filteredGuides = currentCategory?.guides.filter(g =>
+    !search || g.title.toLowerCase().includes(search.toLowerCase()) || g.summary.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="container py-4 sm:py-6 max-w-5xl">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="font-mono text-lg sm:text-xl font-bold text-foreground">Playwright Intelligence — Guide</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Everything you need to structure tests, import results, export reports, and integrate with your workflow.
+        </p>
+      </div>
+
+      {/* Back navigation */}
+      {selectedCategory && !selectedGuide && (
+        <Button variant="ghost" size="sm" className="mb-4 gap-1.5 font-mono text-xs" onClick={() => { setSelectedCategory(null); setSearch(""); }}>
+          <ArrowLeft className="h-4 w-4" /> All Categories
+        </Button>
+      )}
+      {selectedGuide && (
+        <Button variant="ghost" size="sm" className="mb-4 gap-1.5 font-mono text-xs" onClick={() => setSelectedGuide(null)}>
+          <ArrowLeft className="h-4 w-4" /> Back to Guides
+        </Button>
+      )}
+
+      {/* ── Level 1: Category cards ── */}
+      {!selectedCategory && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {categories.map(cat => (
+            <Card
+              key={cat.id}
+              className="cursor-pointer hover:shadow-md transition-all group border-border/60 hover:border-primary/30"
+              onClick={() => setSelectedCategory(cat.id)}
+            >
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <span className="text-lg">{cat.icon}</span>
+                  </div>
+                  <div>
+                    <CardTitle className="text-sm font-mono">{cat.title}</CardTitle>
+                    <CardDescription className="text-[10px] mt-0.5">{cat.guides.length} guide{cat.guides.length !== 1 ? "s" : ""}</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground">{cat.description}</p>
+                <div className="flex items-center gap-1 mt-3 text-[11px] text-primary font-medium font-mono group-hover:underline">
+                  View guides <ChevronRight className="h-3 w-3" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* ── Level 2: Guide list for a category ── */}
+      {selectedCategory && !selectedGuide && currentCategory && (
+        <>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+            <div>
+              <h2 className="text-base font-bold text-foreground font-mono flex items-center gap-2">
+                <span>{currentCategory.icon}</span> {currentCategory.title}
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">{currentCategory.description}</p>
+            </div>
+            {currentCategory.guides.length > 2 && (
+              <div className="relative w-full sm:w-56">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  placeholder="Search guides…"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="pl-9 h-8 text-xs font-mono"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            {filteredGuides?.map(guide => (
+              <Card
+                key={guide.id}
+                className="cursor-pointer hover:shadow-sm transition-all hover:border-primary/20"
+                onClick={() => setSelectedGuide(guide)}
+              >
+                <CardContent className="p-3 sm:p-4 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                    <span className="text-base">{guide.icon}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground text-xs sm:text-sm font-mono">{guide.title}</h3>
+                    <p className="text-[11px] text-muted-foreground truncate">{guide.summary}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Badge variant="secondary" className={`text-[9px] ${difficultyColors[guide.difficulty]}`}>
+                      {guide.difficulty}
+                    </Badge>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            {filteredGuides?.length === 0 && (
+              <p className="text-center text-muted-foreground py-10 font-mono text-sm">No guides match your search.</p>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* ── Level 3: Guide detail ── */}
+      {selectedGuide && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <span className="text-lg">{selectedGuide.icon}</span>
+              </div>
+              <div className="flex-1">
+                <CardTitle className="text-base sm:text-lg font-mono">{selectedGuide.title}</CardTitle>
+                <CardDescription className="mt-1 text-xs">{selectedGuide.summary}</CardDescription>
+                <div className="flex items-center gap-3 mt-2">
+                  <Badge variant="secondary" className={difficultyColors[selectedGuide.difficulty]}>
+                    {selectedGuide.difficulty}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {selectedGuide.content}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
@@ -1412,6 +1668,9 @@ test.describe('example-suite', () => {
 
   return (
     <div className="space-y-5">
+      <p className="text-sm text-muted-foreground">
+        Configure your test setup and get ready-to-use code. Select options and copy the output.
+      </p>
       <div className="grid grid-cols-1 gap-4">
         <div className="space-y-2">
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Test Type</label>
