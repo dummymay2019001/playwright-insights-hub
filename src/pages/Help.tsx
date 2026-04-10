@@ -1352,7 +1352,7 @@ steps:
         title: "Interactive Config Generator",
         summary: "Select options and get ready-to-use Playwright config and test files",
         difficulty: "Beginner",
-        content: <PlaygroundGenerator />,
+        content: <PlaygroundGeneratorWrapper />,
       },
     ],
   },
