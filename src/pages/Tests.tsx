@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 interface UniqueTest {
   name: string;
@@ -29,6 +30,9 @@ interface UniqueTest {
   flaky: boolean;
 }
 
+type SortField = "name" | "passRate" | "duration" | "runs";
+type SortDir = "asc" | "desc";
+
 const STATUS_OPTIONS: { label: string; value: TestStatus | "all" }[] = [
   { label: "All", value: "all" },
   { label: "Passed", value: "passed" },
@@ -37,12 +41,21 @@ const STATUS_OPTIONS: { label: string; value: TestStatus | "all" }[] = [
   { label: "Flaky", value: "flaky" as any },
 ];
 
+const SORT_OPTIONS: { label: string; value: SortField }[] = [
+  { label: "Name", value: "name" },
+  { label: "Pass Rate", value: "passRate" },
+  { label: "Duration", value: "duration" },
+  { label: "Run Count", value: "runs" },
+];
+
 const TestsPage = () => {
   const { runs, loading } = useRuns();
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [suiteFilter, setSuiteFilter] = useState<string>("all");
   const [tagFilter, setTagFilter] = useState<string>("all");
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   // Build unique tests map: one entry per test name, aggregated across runs
   const { uniqueTests, suites, tags } = useMemo(() => {
