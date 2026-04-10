@@ -247,6 +247,29 @@ const TestsPage = () => {
           </SelectContent>
         </Select>
 
+        <div className="w-px h-6 bg-border mx-1 hidden sm:block" />
+
+        <div className="flex items-center gap-1">
+          <Select value={sortField} onValueChange={(v) => setSortField(v as SortField)}>
+            <SelectTrigger className="w-[130px] h-8 font-mono text-xs">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+          >
+            {sortDir === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
+          </Button>
+        </div>
+
         {activeFilters > 0 && (
           <Button variant="ghost" size="sm" className="font-mono text-xs h-7 text-muted-foreground" onClick={clearFilters}>
             Clear ({activeFilters})
