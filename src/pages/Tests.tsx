@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 interface UniqueTest {
   name: string;
@@ -29,6 +30,9 @@ interface UniqueTest {
   flaky: boolean;
 }
 
+type SortField = "name" | "passRate" | "duration" | "runs";
+type SortDir = "asc" | "desc";
+
 const STATUS_OPTIONS: { label: string; value: TestStatus | "all" }[] = [
   { label: "All", value: "all" },
   { label: "Passed", value: "passed" },
@@ -37,12 +41,21 @@ const STATUS_OPTIONS: { label: string; value: TestStatus | "all" }[] = [
   { label: "Flaky", value: "flaky" as any },
 ];
 
+const SORT_OPTIONS: { label: string; value: SortField }[] = [
+  { label: "Name", value: "name" },
+  { label: "Pass Rate", value: "passRate" },
+  { label: "Duration", value: "duration" },
+  { label: "Run Count", value: "runs" },
+];
+
 const TestsPage = () => {
   const { runs, loading } = useRuns();
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [suiteFilter, setSuiteFilter] = useState<string>("all");
   const [tagFilter, setTagFilter] = useState<string>("all");
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   // Build unique tests map: one entry per test name, aggregated across runs
   const { uniqueTests, suites, tags } = useMemo(() => {
@@ -111,8 +124,31 @@ const TestsPage = () => {
     }
     if (suiteFilter !== "all") list = list.filter((t) => t.suite === suiteFilter);
     if (tagFilter !== "all") list = list.filter((t) => t.tags.includes(tagFilter));
-    return list;
-  }, [uniqueTests, statusFilter, suiteFilter, tagFilter]);
+
+    // Sort
+    const sorted = [...list].sort((a, b) => {
+      let cmp = 0;
+      switch (sortField) {
+        case "name":
+          cmp = a.name.localeCompare(b.name);
+          break;
+        case "passRate": {
+          const rA = a.totalRuns > 0 ? a.passCount / a.totalRuns : 0;
+          const rB = b.totalRuns > 0 ? b.passCount / b.totalRuns : 0;
+          cmp = rA - rB;
+          break;
+        }
+        case "duration":
+          cmp = a.avgDuration - b.avgDuration;
+          break;
+        case "runs":
+          cmp = a.totalRuns - b.totalRuns;
+          break;
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return sorted;
+  }, [uniqueTests, statusFilter, suiteFilter, tagFilter, sortField, sortDir]);
 
   const searchKey = useCallback((t: UniqueTest) => `${t.name} ${t.suite} ${t.tags.join(" ")}`, []);
   const { search, setSearch, page, setPage, totalPages, paginated, totalFiltered } =
@@ -210,6 +246,29 @@ const TestsPage = () => {
             })}
           </SelectContent>
         </Select>
+
+        <div className="w-px h-6 bg-border mx-1 hidden sm:block" />
+
+        <div className="flex items-center gap-1">
+          <Select value={sortField} onValueChange={(v) => setSortField(v as SortField)}>
+            <SelectTrigger className="w-[130px] h-8 font-mono text-xs">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+          >
+            {sortDir === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
+          </Button>
+        </div>
 
         {activeFilters > 0 && (
           <Button variant="ghost" size="sm" className="font-mono text-xs h-7 text-muted-foreground" onClick={clearFilters}>
