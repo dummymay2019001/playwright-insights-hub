@@ -189,6 +189,9 @@ const TestDetailPage = () => {
             ))}
           </div>
         </div>
+        <Button variant="outline" size="sm" className="font-mono text-xs shrink-0" onClick={() => navigate(`/export/test/${encodeURIComponent(decodedName)}`)}>
+          📄 Export
+        </Button>
       </div>
 
       {/* Stats */}
