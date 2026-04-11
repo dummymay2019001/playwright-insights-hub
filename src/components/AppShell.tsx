@@ -16,8 +16,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isDetailPage = location.pathname.startsWith("/run/") || location.pathname.startsWith("/test/") || location.pathname.startsWith("/export/") || location.pathname.startsWith("/suite/");
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Top Nav */}
@@ -32,32 +30,23 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
 
           {/* Nav Links */}
-          {!isDetailPage && (
-            <nav className="flex items-center gap-0.5 ml-4">
-              {NAV_ITEMS.map((item) => {
-                const isActive = location.pathname === item.path;
-                return (
-                  <Button
-                    key={item.path}
-                    variant={isActive ? "default" : "ghost"}
-                    size="sm"
-                    className={`font-mono text-xs h-8 px-2.5 sm:px-3 ${isActive ? "" : "text-muted-foreground"}`}
-                    onClick={() => navigate(item.path)}
-                  >
-                    <span className="sm:hidden">{item.icon}</span>
-                    <span className="hidden sm:inline">{item.icon} {item.label}</span>
-                  </Button>
-                );
-              })}
-            </nav>
-          )}
-
-          {/* Back button on detail pages */}
-          {isDetailPage && (
-            <Button variant="ghost" size="sm" className="font-mono text-xs ml-2" onClick={() => navigate(-1)}>
-              ← Back
-            </Button>
-          )}
+          <nav className="flex items-center gap-0.5 ml-4">
+            {NAV_ITEMS.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Button
+                  key={item.path}
+                  variant={isActive ? "default" : "ghost"}
+                  size="sm"
+                  className={`font-mono text-xs h-8 px-2.5 sm:px-3 ${isActive ? "" : "text-muted-foreground"}`}
+                  onClick={() => navigate(item.path)}
+                >
+                  <span className="sm:hidden">{item.icon}</span>
+                  <span className="hidden sm:inline">{item.icon} {item.label}</span>
+                </Button>
+              );
+            })}
+          </nav>
 
           <div className="flex-1" />
 
