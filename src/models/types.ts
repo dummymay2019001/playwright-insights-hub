@@ -12,6 +12,13 @@ export interface TestStep {
   steps?: TestStep[]; // nested steps
 }
 
+export type BrowserName = "chromium" | "firefox" | "webkit";
+
+export interface Annotation {
+  type: "fixme" | "slow" | "skip" | "fail" | "info";
+  description?: string;
+}
+
 export interface RunManifest {
   runId: string;
   timestamp: string;
@@ -22,6 +29,9 @@ export interface RunManifest {
   failed: number;
   skipped: number;
   duration: number; // seconds
+  browser?: BrowserName;
+  commitSha?: string;
+  ciPipelineId?: string;
 }
 
 export interface ApiPayload {
@@ -50,6 +60,8 @@ export interface TestResult {
   severity?: Severity;
   defectCategory?: DefectCategory;
   steps?: TestStep[];
+  annotations?: Annotation[];
+  browser?: BrowserName;
 }
 
 export interface TestRun {
