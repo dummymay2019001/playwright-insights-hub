@@ -146,6 +146,87 @@ const AboutPage = () => {
         </div>
       </section>
 
+      {/* Comparison */}
+      <section className="container py-12 sm:py-16">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-2">Why Us</h2>
+            <p className="text-xl sm:text-2xl font-bold text-foreground">Beyond traditional test reports</p>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-2 max-w-lg mx-auto">
+              Tools like Allure generate beautiful single-run HTML reports. But teams need more than pretty output — they need answers.
+            </p>
+          </div>
+
+          {/* Comparison table */}
+          <div className="rounded-xl border bg-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b bg-muted/40">
+                    <th className="font-mono text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider p-3 sm:p-4">Capability</th>
+                    <th className="font-mono text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider p-3 sm:p-4 text-center">Traditional Reports</th>
+                    <th className="font-mono text-[10px] sm:text-xs uppercase tracking-wider p-3 sm:p-4 text-center text-primary">Playwright Intelligence</th>
+                  </tr>
+                </thead>
+                <tbody className="text-xs sm:text-sm">
+                  {[
+                    { cap: "Cross-run trend analysis", trad: false, us: true },
+                    { cap: "Flaky test detection", trad: false, us: true },
+                    { cap: "Defect classification (Product / Test / Infra)", trad: false, us: true },
+                    { cap: "Auto severity inference", trad: false, us: true },
+                    { cap: "Suite stability tracking", trad: false, us: true },
+                    { cap: "Test-level health history & export", trad: false, us: true },
+                    { cap: "Tag-based pass rate breakdown", trad: false, us: true },
+                    { cap: "Environment comparison", trad: false, us: true },
+                    { cap: "Zero setup — no server, no DB", trad: false, us: true },
+                    { cap: "Privacy — data never leaves your machine", trad: "partial", us: true },
+                    { cap: "Single-run HTML report", trad: true, us: true },
+                    { cap: "Step-by-step execution traces", trad: true, us: true },
+                  ].map((row) => (
+                    <tr key={row.cap} className="border-b last:border-0 hover:bg-muted/20 transition-colors">
+                      <td className="p-3 sm:p-4 text-foreground">{row.cap}</td>
+                      <td className="p-3 sm:p-4 text-center">
+                        {row.trad === true ? (
+                          <span className="text-success font-bold">✓</span>
+                        ) : row.trad === "partial" ? (
+                          <span className="text-warning font-bold">~</span>
+                        ) : (
+                          <span className="text-muted-foreground/40 font-bold">✗</span>
+                        )}
+                      </td>
+                      <td className="p-3 sm:p-4 text-center">
+                        <span className="text-success font-bold">✓</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Pain points */}
+          <div className="grid sm:grid-cols-3 gap-3 mt-6">
+            {[
+              { icon: "🔄", title: "No history retention", desc: "Allure regenerates from scratch each run. Previous results are gone unless you maintain a separate Allure server." },
+              { icon: "🔧", title: "Complex setup & maintenance", desc: "Requires custom reporters, plugins, and often a dedicated server to aggregate results across runs." },
+              { icon: "🤷", title: "No root cause analysis", desc: "You see red tests but no classification — is it a product bug, flaky test, or CI timeout? You figure it out yourself." },
+            ].map((p) => (
+              <div key={p.title} className="p-4 rounded-xl border bg-card">
+                <span className="text-lg">{p.icon}</span>
+                <h3 className="font-mono text-xs font-semibold text-foreground mt-2 mb-1">{p.title}</h3>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">{p.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center mt-8">
+            <p className="text-xs text-muted-foreground italic">
+              Allure is a great tool for what it does. Playwright Intelligence picks up where single-run reports end.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Features */}
       <section className="container py-12 sm:py-16">
         <div className="text-center mb-10">
