@@ -24,7 +24,14 @@ export function classifyDefect(error?: string): DefectCategory {
     e.includes("service unavailable") ||
     e.includes("connection refused") ||
     e.includes("dns") ||
-    e.includes("certificate")
+    e.includes("certificate") ||
+    e.includes("cors") ||
+    e.includes("frame was detached") ||
+    e.includes("target closed") ||
+    e.includes("browser context was destroyed") ||
+    e.includes("err_name_not_resolved") ||
+    e.includes("navigation failed") ||
+    e.includes("err_aborted")
   ) {
     return "infrastructure";
   }
