@@ -5,7 +5,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, AreaChart, Area,
 } from "recharts";
-import { StatusBadge } from "@/components/StatusBadge";
+
 
 const chartTooltipStyle = {
   backgroundColor: "hsl(0, 0%, 100%)",
@@ -39,19 +39,6 @@ const TrendsPage = () => {
     [sorted]
   );
 
-  const comparison = useMemo(() => {
-    if (sorted.length < 2) return null;
-    const curr = sorted[sorted.length - 1];
-    const prev = sorted[sorted.length - 2];
-    const currNames = new Set(curr.results.filter((t) => t.status === "failed").map((t) => t.name));
-    const prevNames = new Set(prev.results.filter((t) => t.status === "failed").map((t) => t.name));
-    return {
-      curr: curr.manifest,
-      prev: prev.manifest,
-      newFailures: [...currNames].filter((n) => !prevNames.has(n)),
-      resolved: [...prevNames].filter((n) => !currNames.has(n)),
-    };
-  }, [sorted]);
 
   if (loading) {
     return (
@@ -159,56 +146,6 @@ const TrendsPage = () => {
           </div>
         </section>
       </div>
-
-      {comparison && (
-        <section className="rounded-lg border bg-card p-4 space-y-4">
-          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Run Comparison: Latest vs Previous</h2>
-          <div className="grid grid-cols-2 gap-3 text-center">
-            <div className="rounded-md border bg-muted/40 p-3">
-              <p className="text-xs text-muted-foreground mb-1">Previous</p>
-              <p className="font-mono text-sm font-semibold text-foreground">{passRate(comparison.prev)}% pass</p>
-              <p className="font-mono text-xs text-muted-foreground">{comparison.prev.failed} failures</p>
-            </div>
-            <div className="rounded-md border bg-muted/40 p-3">
-              <p className="text-xs text-muted-foreground mb-1">Latest</p>
-              <p className="font-mono text-sm font-semibold text-foreground">{passRate(comparison.curr)}% pass</p>
-              <p className="font-mono text-xs text-muted-foreground">{comparison.curr.failed} failures</p>
-            </div>
-          </div>
-
-          {comparison.newFailures.length > 0 && (
-            <div>
-              <h3 className="text-xs font-medium text-destructive mb-2">🔴 New Failures ({comparison.newFailures.length})</h3>
-              <div className="space-y-1">
-                {comparison.newFailures.map((name) => (
-                  <div key={name} className="flex items-center gap-2 px-3 py-1.5 rounded border bg-destructive/5 border-destructive/20">
-                    <StatusBadge status="failed" />
-                    <span className="font-mono text-xs text-foreground truncate">{name}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {comparison.resolved.length > 0 && (
-            <div>
-              <h3 className="text-xs font-medium text-success mb-2">🟢 Resolved ({comparison.resolved.length})</h3>
-              <div className="space-y-1">
-                {comparison.resolved.map((name) => (
-                  <div key={name} className="flex items-center gap-2 px-3 py-1.5 rounded border bg-success/5 border-success/20">
-                    <StatusBadge status="passed" />
-                    <span className="font-mono text-xs text-foreground truncate">{name}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {comparison.newFailures.length === 0 && comparison.resolved.length === 0 && (
-            <p className="font-mono text-xs text-muted-foreground text-center py-2">No changes in failing tests between runs</p>
-          )}
-        </section>
-      )}
     </div>
   );
 };
