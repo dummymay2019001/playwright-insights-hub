@@ -8,6 +8,7 @@ import { AppShell } from "@/components/AppShell";
 import Index from "./pages/Index.tsx";
 import RunDetail from "./pages/RunDetail.tsx";
 import Trends from "./pages/Trends.tsx";
+import Compare from "./pages/Compare.tsx";
 import Insights from "./pages/Insights.tsx";
 import TestDetail from "./pages/TestDetail.tsx";
 import ExportPage from "./pages/ExportPage.tsx";
@@ -34,6 +35,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/run/:runId" element={<RunDetail />} />
               <Route path="/trends" element={<Trends />} />
+              <Route path="/compare" element={<Compare />} />
               <Route path="/insights" element={<Insights />} />
               <Route path="/test/:testName" element={<TestDetail />} />
               <Route path="/suite/:suiteName" element={<SuiteDetail />} />
