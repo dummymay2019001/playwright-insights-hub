@@ -9,6 +9,7 @@ import Index from "./pages/Index.tsx";
 import RunDetail from "./pages/RunDetail.tsx";
 import Trends from "./pages/Trends.tsx";
 import Compare from "./pages/Compare.tsx";
+import CompareExportPage from "./pages/CompareExportPage.tsx";
 import Insights from "./pages/Insights.tsx";
 import TestDetail from "./pages/TestDetail.tsx";
 import ExportPage from "./pages/ExportPage.tsx";
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="/suite/:suiteName" element={<SuiteDetail />} />
               <Route path="/tests" element={<TestsPage />} />
               <Route path="/environments" element={<EnvironmentsPage />} />
+              <Route path="/export/compare" element={<CompareExportPage />} />
               <Route path="/export/suite/:suiteName" element={<SuiteExportPage />} />
               <Route path="/export/test/:testName" element={<TestExportPage />} />
               <Route path="/export/:runId" element={<ExportPage />} />
