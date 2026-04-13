@@ -5,7 +5,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, AreaChart, Area,
 } from "recharts";
-import { StatusBadge } from "@/components/StatusBadge";
+
 
 const chartTooltipStyle = {
   backgroundColor: "hsl(0, 0%, 100%)",
