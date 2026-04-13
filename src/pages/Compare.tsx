@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useRuns } from "@/store/RunsContext";
+import { useNavigate } from "react-router-dom";
 import { TestRun, TestResult, TestStatus } from "@/models/types";
 import { formatDate, formatDuration, passRate } from "@/utils/format";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -7,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { generateComparisonPdf } from "@/services/comparisonPdfGenerator";
+import {
+  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
+} from "@/components/ui/accordion";
 import { FileDown } from "lucide-react";
 
-interface ComparisonData {
+export interface ComparisonData {
   runA: TestRun;
   runB: TestRun;
   newFailures: TestResult[];
@@ -26,7 +29,7 @@ interface ComparisonData {
   suiteHealthMap: Map<string, { passA: number; failA: number; passB: number; failB: number }>;
 }
 
-function buildComparison(runA: TestRun, runB: TestRun): ComparisonData {
+export function buildComparison(runA: TestRun, runB: TestRun): ComparisonData {
   const mapA = new Map(runA.results.map((t) => [t.name, t]));
   const mapB = new Map(runB.results.map((t) => [t.name, t]));
 
@@ -36,7 +39,6 @@ function buildComparison(runA: TestRun, runB: TestRun): ComparisonData {
   const newTests: TestResult[] = [];
   const removed: string[] = [];
 
-  // Tests in B but not in A
   for (const [name, testB] of mapB) {
     const testA = mapA.get(name);
     if (!testA) {
@@ -50,12 +52,10 @@ function buildComparison(runA: TestRun, runB: TestRun): ComparisonData {
     }
   }
 
-  // Tests in A but not in B
   for (const [name] of mapA) {
     if (!mapB.has(name)) removed.push(name);
   }
 
-  // Suite health
   const suiteHealthMap = new Map<string, { passA: number; failA: number; passB: number; failB: number }>();
   const allSuites = new Set([
     ...runA.results.map((t) => t.suite),
@@ -89,6 +89,7 @@ function buildComparison(runA: TestRun, runB: TestRun): ComparisonData {
 
 const ComparePage = () => {
   const { runs, loading } = useRuns();
+  const navigate = useNavigate();
   const [runIdA, setRunIdA] = useState<string>("");
   const [runIdB, setRunIdB] = useState<string>("");
 
@@ -125,29 +126,16 @@ const ComparePage = () => {
             size="sm"
             variant="outline"
             className="font-mono text-xs gap-1.5"
-            onClick={() => generateComparisonPdf(comparison.runA, comparison.runB, comparison)}
+            onClick={() => navigate(`/export/compare?a=${encodeURIComponent(runIdA)}&b=${encodeURIComponent(runIdB)}`)}
           >
             <FileDown className="h-3.5 w-3.5" /> Export PDF
           </Button>
         )}
       </div>
 
-      {/* Run Selectors */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <RunSelector
-          label="Baseline (Run A)"
-          value={runIdA}
-          onChange={setRunIdA}
-          runs={sorted}
-          excludeId={runIdB}
-        />
-        <RunSelector
-          label="Compare (Run B)"
-          value={runIdB}
-          onChange={setRunIdB}
-          runs={sorted}
-          excludeId={runIdA}
-        />
+        <RunSelector label="Baseline (Run A)" value={runIdA} onChange={setRunIdA} runs={sorted} excludeId={runIdB} />
+        <RunSelector label="Compare (Run B)" value={runIdB} onChange={setRunIdB} runs={sorted} excludeId={runIdA} />
       </div>
 
       {!comparison && runIdA && runIdB && runIdA === runIdB && (
@@ -167,11 +155,7 @@ const ComparePage = () => {
 };
 
 function RunSelector({ label, value, onChange, runs, excludeId }: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  runs: TestRun[];
-  excludeId: string;
+  label: string; value: string; onChange: (v: string) => void; runs: TestRun[]; excludeId: string;
 }) {
   return (
     <div className="space-y-1.5">
@@ -195,6 +179,45 @@ function RunSelector({ label, value, onChange, runs, excludeId }: {
 function ComparisonView({ data }: { data: ComparisonData }) {
   const d = data;
 
+  const sections: { id: string; title: string; count: number; variant: string; content: React.ReactNode }[] = [];
+
+  if (d.newFailures.length > 0) {
+    sections.push({
+      id: "new-failures", title: "🔴 New Failures", count: d.newFailures.length, variant: "destructive",
+      content: d.newFailures.map((t) => <DiffRow key={t.id} test={t} statusA="passed" statusB="failed" />),
+    });
+  }
+  if (d.resolved.length > 0) {
+    sections.push({
+      id: "resolved", title: "🟢 Resolved", count: d.resolved.length, variant: "success",
+      content: d.resolved.map((t) => <DiffRow key={t.id} test={t} statusA="failed" statusB={t.status} />),
+    });
+  }
+  if (d.persistent.length > 0) {
+    sections.push({
+      id: "persistent", title: "🟠 Persistent Failures", count: d.persistent.length, variant: "warning",
+      content: d.persistent.map((t) => <DiffRow key={t.id} test={t} statusA="failed" statusB="failed" />),
+    });
+  }
+  if (d.newTests.length > 0) {
+    sections.push({
+      id: "new-tests", title: "🆕 New Tests", count: d.newTests.length, variant: "info",
+      content: d.newTests.map((t) => <DiffRow key={t.id} test={t} statusA={null} statusB={t.status} />),
+    });
+  }
+  if (d.removed.length > 0) {
+    sections.push({
+      id: "removed", title: "🗑️ Removed Tests", count: d.removed.length, variant: "muted",
+      content: d.removed.map((name) => (
+        <div key={name} className="flex items-center gap-2 px-3 py-1.5 rounded border bg-muted/30">
+          <span className="font-mono text-xs text-muted-foreground truncate">{name}</span>
+        </div>
+      )),
+    });
+  }
+
+  const defaultOpen = sections.filter((s) => s.variant === "destructive" || s.variant === "success").map((s) => s.id);
+
   return (
     <div className="space-y-5">
       {/* Overview Cards */}
@@ -205,93 +228,81 @@ function ComparisonView({ data }: { data: ComparisonData }) {
         <DeltaCard label="Total Tests" valueA={`${d.runA.manifest.total}`} valueB={`${d.runB.manifest.total}`} delta={d.totalDelta} good="positive" />
       </div>
 
-      {/* New Failures */}
-      {d.newFailures.length > 0 && (
-        <DiffSection title="🔴 New Failures" subtitle="Tests that passed in A but fail in B" variant="destructive">
-          {d.newFailures.map((t) => (
-            <DiffRow key={t.id} test={t} statusA="passed" statusB="failed" />
-          ))}
-        </DiffSection>
-      )}
+      {/* Diff Sections as Accordion */}
+      {sections.length > 0 && (
+        <Accordion type="multiple" defaultValue={defaultOpen} className="space-y-2">
+          {sections.map((s) => {
+            const borderClass =
+              s.variant === "destructive" ? "border-destructive/20" :
+              s.variant === "success" ? "border-success/20" :
+              s.variant === "warning" ? "border-amber-500/20" : "border-border";
 
-      {/* Resolved */}
-      {d.resolved.length > 0 && (
-        <DiffSection title="🟢 Resolved" subtitle="Tests that failed in A but pass in B" variant="success">
-          {d.resolved.map((t) => (
-            <DiffRow key={t.id} test={t} statusA="failed" statusB={t.status} />
-          ))}
-        </DiffSection>
-      )}
-
-      {/* Persistent Failures */}
-      {d.persistent.length > 0 && (
-        <DiffSection title="🟠 Persistent Failures" subtitle="Tests failing in both runs" variant="warning">
-          {d.persistent.map((t) => (
-            <DiffRow key={t.id} test={t} statusA="failed" statusB="failed" />
-          ))}
-        </DiffSection>
-      )}
-
-      {/* New Tests */}
-      {d.newTests.length > 0 && (
-        <DiffSection title="🆕 New Tests" subtitle="Tests present in B but not in A" variant="info">
-          {d.newTests.map((t) => (
-            <DiffRow key={t.id} test={t} statusA={null} statusB={t.status} />
-          ))}
-        </DiffSection>
-      )}
-
-      {/* Removed Tests */}
-      {d.removed.length > 0 && (
-        <DiffSection title="🗑️ Removed Tests" subtitle="Tests present in A but not in B" variant="muted">
-          {d.removed.map((name) => (
-            <div key={name} className="flex items-center gap-2 px-3 py-1.5 rounded border bg-muted/30">
-              <span className="font-mono text-xs text-muted-foreground truncate">{name}</span>
-            </div>
-          ))}
-        </DiffSection>
+            return (
+              <AccordionItem key={s.id} value={s.id} className={`rounded-lg border ${borderClass} bg-card overflow-hidden`}>
+                <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-foreground">{s.title}</span>
+                    <span className="font-mono text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{s.count}</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-3">
+                  <div className="space-y-1">{s.content}</div>
+                </AccordionContent>
+              </AccordionItem>
+            );
+          })}
+        </Accordion>
       )}
 
       {/* Suite Health Comparison */}
-      <section className="rounded-lg border bg-card p-4">
-        <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Suite Health Comparison</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs font-mono">
-            <thead>
-              <tr className="border-b text-muted-foreground">
-                <th className="text-left py-2 pr-4">Suite</th>
-                <th className="text-center px-3 py-2">Pass (A)</th>
-                <th className="text-center px-3 py-2">Fail (A)</th>
-                <th className="text-center px-3 py-2">Pass (B)</th>
-                <th className="text-center px-3 py-2">Fail (B)</th>
-                <th className="text-center px-3 py-2">Δ Failures</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[...d.suiteHealthMap.entries()]
-                .sort((a, b) => (b[1].failB - b[1].failA) - (a[1].failB - a[1].failA))
-                .map(([suite, h]) => {
-                  const delta = h.failB - h.failA;
-                  return (
-                    <tr key={suite} className="border-b border-border/50">
-                      <td className="py-2 pr-4 text-foreground truncate max-w-[200px]">{suite}</td>
-                      <td className="text-center px-3 py-2 text-success">{h.passA}</td>
-                      <td className="text-center px-3 py-2 text-destructive">{h.failA}</td>
-                      <td className="text-center px-3 py-2 text-success">{h.passB}</td>
-                      <td className="text-center px-3 py-2 text-destructive">{h.failB}</td>
-                      <td className={`text-center px-3 py-2 font-semibold ${delta > 0 ? "text-destructive" : delta < 0 ? "text-success" : "text-muted-foreground"}`}>
-                        {delta > 0 ? `+${delta}` : delta}
-                      </td>
-                    </tr>
-                  );
-                })}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <Accordion type="multiple" defaultValue={["suite-health"]} className="space-y-2">
+        <AccordionItem value="suite-health" className="rounded-lg border bg-card overflow-hidden">
+          <AccordionTrigger className="px-4 py-3 hover:no-underline">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-foreground">📊 Suite Health Comparison</span>
+              <span className="font-mono text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{d.suiteHealthMap.size} suites</span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-3">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs font-mono">
+                <thead>
+                  <tr className="border-b text-muted-foreground">
+                    <th className="text-left py-2 pr-4">Suite</th>
+                    <th className="text-center px-3 py-2">Pass (A)</th>
+                    <th className="text-center px-3 py-2">Fail (A)</th>
+                    <th className="text-center px-3 py-2">Pass (B)</th>
+                    <th className="text-center px-3 py-2">Fail (B)</th>
+                    <th className="text-center px-3 py-2">Δ Failures</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...d.suiteHealthMap.entries()]
+                    .sort((a, b) => (b[1].failB - b[1].failA) - (a[1].failB - a[1].failA))
+                    .map(([suite, h]) => {
+                      const delta = h.failB - h.failA;
+                      return (
+                        <tr key={suite} className="border-b border-border/50">
+                          <td className="py-2 pr-4 text-foreground truncate max-w-[200px]">{suite}</td>
+                          <td className="text-center px-3 py-2 text-success">{h.passA}</td>
+                          <td className="text-center px-3 py-2 text-destructive">{h.failA}</td>
+                          <td className="text-center px-3 py-2 text-success">{h.passB}</td>
+                          <td className="text-center px-3 py-2 text-destructive">{h.failB}</td>
+                          <td className={`text-center px-3 py-2 font-semibold ${delta > 0 ? "text-destructive" : delta < 0 ? "text-success" : "text-muted-foreground"}`}>
+                            {delta > 0 ? `+${delta}` : delta}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
 
       {/* No Changes */}
-      {d.newFailures.length === 0 && d.resolved.length === 0 && d.persistent.length === 0 && d.newTests.length === 0 && d.removed.length === 0 && (
+      {sections.length === 0 && (
         <div className="rounded-lg border bg-card p-8 text-center">
           <p className="font-mono text-sm text-muted-foreground">✅ No test-level differences found between these runs</p>
         </div>
@@ -321,24 +332,6 @@ function DeltaCard({ label, valueA, valueB, delta, suffix, good }: {
         </p>
       )}
     </div>
-  );
-}
-
-function DiffSection({ title, subtitle, variant, children }: {
-  title: string; subtitle: string; variant: string; children: React.ReactNode;
-}) {
-  const borderClass = variant === "destructive" ? "border-destructive/20" :
-    variant === "success" ? "border-success/20" :
-    variant === "warning" ? "border-amber-500/20" : "border-border";
-
-  return (
-    <section className={`rounded-lg border ${borderClass} bg-card p-4 space-y-2`}>
-      <div>
-        <h3 className="text-sm font-medium text-foreground">{title}</h3>
-        <p className="text-[10px] text-muted-foreground">{subtitle}</p>
-      </div>
-      <div className="space-y-1">{children}</div>
-    </section>
   );
 }
 
