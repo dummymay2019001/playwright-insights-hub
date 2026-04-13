@@ -120,21 +120,23 @@ export function generateComparisonPdf(runA: TestRun, runB: TestRun, data: Compar
   y += infoA.length * 4.5 + 6;
 
   // Delta summary
-  doc.setFillColor(...LIGHT_BG);
-  doc.roundedRect(margin, y, pw - margin * 2, 14, 2, 2, "F");
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "bold");
-  const deltas = [
-    `Δ Pass Rate: ${data.passRateDelta > 0 ? "+" : ""}${data.passRateDelta}%`,
-    `Δ Failures: ${data.runB.manifest.failed - data.runA.manifest.failed > 0 ? "+" : ""}${data.runB.manifest.failed - data.runA.manifest.failed}`,
-    `Δ Duration: ${data.durationDelta > 0 ? "+" : ""}${data.durationDelta}s`,
-    `Δ Tests: ${data.totalDelta > 0 ? "+" : ""}${data.totalDelta}`,
-  ];
-  doc.setTextColor(...DARK);
-  deltas.forEach((d, i) => {
-    doc.text(d, margin + 4 + i * 42, y + 9);
-  });
-  y += 20;
+  if (o.includeDeltaSummary) {
+    doc.setFillColor(...LIGHT_BG);
+    doc.roundedRect(margin, y, pw - margin * 2, 14, 2, 2, "F");
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    const deltas = [
+      `Δ Pass Rate: ${data.passRateDelta > 0 ? "+" : ""}${data.passRateDelta}%`,
+      `Δ Failures: ${data.runB.manifest.failed - data.runA.manifest.failed > 0 ? "+" : ""}${data.runB.manifest.failed - data.runA.manifest.failed}`,
+      `Δ Duration: ${data.durationDelta > 0 ? "+" : ""}${data.durationDelta}s`,
+      `Δ Tests: ${data.totalDelta > 0 ? "+" : ""}${data.totalDelta}`,
+    ];
+    doc.setTextColor(...DARK);
+    deltas.forEach((d, i) => {
+      doc.text(d, margin + 4 + i * 42, y + 9);
+    });
+    y += 20;
+  }
 
   // Helper for section tables
   function sectionTable(title: string, color: RGB, rows: string[][], columns: string[]) {
@@ -159,36 +161,41 @@ export function generateComparisonPdf(runA: TestRun, runB: TestRun, data: Compar
     y = (doc as any).lastAutoTable.finalY + 8;
   }
 
-  // New Failures
-  sectionTable(
-    `New Failures (${data.newFailures.length})`, RED,
-    data.newFailures.map((t) => [t.name, t.suite, (t.error || "—").slice(0, 80)]),
-    ["Test Name", "Suite", "Error"],
-  );
+  const errorCols = o.includeErrorDetails ? ["Test Name", "Suite", "Error"] : ["Test Name", "Suite"];
 
-  // Resolved
-  sectionTable(
-    `Resolved (${data.resolved.length})`, GREEN,
-    data.resolved.map((t) => [t.name, t.suite]),
-    ["Test Name", "Suite"],
-  );
+  if (o.includeNewFailures) {
+    sectionTable(
+      `New Failures (${data.newFailures.length})`, RED,
+      data.newFailures.map((t) => o.includeErrorDetails ? [t.name, t.suite, (t.error || "—").slice(0, 80)] : [t.name, t.suite]),
+      errorCols,
+    );
+  }
 
-  // Persistent Failures
-  sectionTable(
-    `Persistent Failures (${data.persistent.length})`, AMBER,
-    data.persistent.map((t) => [t.name, t.suite, (t.error || "—").slice(0, 80)]),
-    ["Test Name", "Suite", "Error"],
-  );
+  if (o.includeResolved) {
+    sectionTable(
+      `Resolved (${data.resolved.length})`, GREEN,
+      data.resolved.map((t) => [t.name, t.suite]),
+      ["Test Name", "Suite"],
+    );
+  }
 
-  // New Tests
-  sectionTable(
-    `New Tests (${data.newTests.length})`, BLUE,
-    data.newTests.map((t) => [t.name, t.suite, t.status]),
-    ["Test Name", "Suite", "Status"],
-  );
+  if (o.includePersistentFailures) {
+    sectionTable(
+      `Persistent Failures (${data.persistent.length})`, AMBER,
+      data.persistent.map((t) => o.includeErrorDetails ? [t.name, t.suite, (t.error || "—").slice(0, 80)] : [t.name, t.suite]),
+      errorCols,
+    );
+  }
 
-  // Removed Tests
-  if (data.removed.length > 0) {
+  if (o.includeNewTests) {
+    sectionTable(
+      `New Tests (${data.newTests.length})`, BLUE,
+      data.newTests.map((t) => [t.name, t.suite, t.status]),
+      ["Test Name", "Suite", "Status"],
+    );
+  }
+
+  if (o.includeRemovedTests && data.removed.length > 0) {
     sectionTable(
       `Removed Tests (${data.removed.length})`, GRAY,
       data.removed.map((n) => [n]),
@@ -197,7 +204,7 @@ export function generateComparisonPdf(runA: TestRun, runB: TestRun, data: Compar
   }
 
   // Suite Health Table
-  if (data.suiteHealthMap.size > 0) {
+  if (o.includeSuiteHealth && data.suiteHealthMap.size > 0) {
     if (y > 230) { doc.addPage(); y = 14; }
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
@@ -218,7 +225,7 @@ export function generateComparisonPdf(runA: TestRun, runB: TestRun, data: Compar
       body: suiteRows,
       margin: { left: margin, right: margin },
       styles: { fontSize: 7, font: "helvetica", cellPadding: 2, textColor: DARK },
-      headStyles: { fillColor: DARK, textColor: [255, 255, 255], fontStyle: "bold" },
+      headStyles: { fillColor: col(DARK, cm), textColor: [255, 255, 255], fontStyle: "bold" },
       alternateRowStyles: { fillColor: LIGHT_BG },
     });
   }
@@ -230,10 +237,13 @@ export function generateComparisonPdf(runA: TestRun, runB: TestRun, data: Compar
     const ph = doc.internal.pageSize.getHeight();
     doc.setFontSize(7);
     doc.setTextColor(...GRAY);
-    doc.text("Playwright Intelligence · Run Comparison Report", margin, ph - 6);
+    doc.text(`${o.reportTitle} · Playwright Intelligence`, margin, ph - 6);
     doc.text(`Page ${i} of ${totalPages}`, pw - margin, ph - 6, { align: "right" });
+    if (o.footerNote) {
+      doc.text(o.footerNote, pw / 2, ph - 6, { align: "center" });
+    }
   }
 
-  const dateStr = new Date().toISOString().slice(0, 10);
-  doc.save(`comparison-${dateStr}.pdf`);
+  const safeName = o.fileName.replace(/[^a-zA-Z0-9-_]/g, "_") || "comparison-report";
+  doc.save(`${safeName}.pdf`);
 }
