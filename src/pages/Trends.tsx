@@ -39,19 +39,6 @@ const TrendsPage = () => {
     [sorted]
   );
 
-  const comparison = useMemo(() => {
-    if (sorted.length < 2) return null;
-    const curr = sorted[sorted.length - 1];
-    const prev = sorted[sorted.length - 2];
-    const currNames = new Set(curr.results.filter((t) => t.status === "failed").map((t) => t.name));
-    const prevNames = new Set(prev.results.filter((t) => t.status === "failed").map((t) => t.name));
-    return {
-      curr: curr.manifest,
-      prev: prev.manifest,
-      newFailures: [...currNames].filter((n) => !prevNames.has(n)),
-      resolved: [...prevNames].filter((n) => !currNames.has(n)),
-    };
-  }, [sorted]);
 
   if (loading) {
     return (
