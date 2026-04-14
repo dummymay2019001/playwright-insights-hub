@@ -11,6 +11,10 @@ export interface ComparisonExportOptions {
   footerNote: string;
   executiveSummary: string;
 
+  // Custom run labels
+  runALabel: string;
+  runBLabel: string;
+
   // Section toggles
   includeDeltaSummary: boolean;
   includeNewFailures: boolean;
