@@ -512,7 +512,7 @@ export default defineConfig({
     id: "reporting",
     icon: "📄",
     title: "Reporting & Exports",
-    description: "Run reports, suite reports, custom reporters, and API payloads",
+    description: "Run reports, suite reports, test exports, comparison reports, and API payloads",
     color: "text-success",
     guides: [
       {
@@ -645,6 +645,60 @@ class DashboardReporter implements Reporter {
 }
 export default DashboardReporter;`}</CodeBlock>
             <Tip><strong className="text-foreground">CI Integration:</strong> Set <code className="font-mono bg-muted px-1 rounded">GIT_BRANCH</code> and <code className="font-mono bg-muted px-1 rounded">TEST_ENV</code> env vars in CI to auto-tag runs.</Tip>
+          </div>
+        ),
+      },
+      {
+        id: "test-export",
+        icon: "🧪",
+        title: "Test-Level PDF Export",
+        summary: "Export individual test health reports with history, failure analysis, and duration trends",
+        difficulty: "Beginner",
+        content: (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Navigate to any test detail page and click <strong className="text-foreground">Export</strong> to generate a comprehensive PDF covering that test's full lifecycle.
+            </p>
+            <div className="rounded-lg border overflow-hidden">
+              <div className="px-4 py-2 bg-muted border-b text-xs font-mono text-muted-foreground">What's Included</div>
+              <div className="p-3 space-y-1.5 text-xs text-muted-foreground">
+                <p>✓ <strong className="text-foreground">Health Summary</strong> — latest status, pass rate, average duration, run count</p>
+                <p>✓ <strong className="text-foreground">Status Timeline</strong> — visual pass/fail history across runs</p>
+                <p>✓ <strong className="text-foreground">Failure Analysis</strong> — error categories, frequency, sample messages</p>
+                <p>✓ <strong className="text-foreground">Duration Trends</strong> — track performance regressions over time</p>
+                <p>✓ <strong className="text-foreground">Flaky Indicator</strong> — flagged if the test has both passed and failed</p>
+              </div>
+            </div>
+            <Tip variant="success" icon="📄">
+              <strong className="text-foreground">Customizable:</strong> Toggle sections on/off, set organization name, add custom notes, choose color/grayscale, and pick page size — just like run and suite exports.
+            </Tip>
+          </div>
+        ),
+      },
+      {
+        id: "comparison-export",
+        icon: "⚖️",
+        title: "Run Comparison & Export",
+        summary: "Compare any two runs side by side and export a detailed diff report",
+        difficulty: "Intermediate",
+        content: (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Use the <strong className="text-foreground">Compare</strong> page to select any two past runs — even weeks apart — and see exactly what changed.
+            </p>
+            <div className="rounded-lg border overflow-hidden">
+              <div className="px-4 py-2 bg-muted border-b text-xs font-mono text-muted-foreground">Comparison Highlights</div>
+              <div className="p-3 space-y-1.5 text-xs text-muted-foreground">
+                <p>🔴 <strong className="text-foreground">New Failures</strong> — tests that passed in Run A but failed in Run B</p>
+                <p>🟢 <strong className="text-foreground">Resolved</strong> — tests that were failing in Run A but now pass</p>
+                <p>🟠 <strong className="text-foreground">Persistent Failures</strong> — tests failing in both runs</p>
+                <p>🆕 <strong className="text-foreground">New & Removed Tests</strong> — added or deleted between runs</p>
+                <p>📊 <strong className="text-foreground">Suite Health Table</strong> — per-suite pass/fail delta</p>
+              </div>
+            </div>
+            <Tip icon="🏷️">
+              <strong className="text-foreground">Custom run labels:</strong> In the export settings, give each run a custom name (e.g. "Sprint 12 Release" vs "Sprint 13 Hotfix") — they appear in the PDF header instead of raw run IDs.
+            </Tip>
           </div>
         ),
       },
