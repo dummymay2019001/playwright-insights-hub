@@ -58,6 +58,20 @@ export function ComparisonExportSettingsPanel({ options, onChange }: Props) {
 
       <Separator />
 
+      <Section title="Run Labels">
+        <p className="text-[10px] text-muted-foreground -mt-1">Custom names shown in the report instead of run IDs</p>
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Run A (Baseline)">
+            <Input className="h-8 text-xs font-mono" placeholder="e.g. Sprint 12 Build" value={options.runALabel} onChange={(e) => update("runALabel", e.target.value)} />
+          </Field>
+          <Field label="Run B (Compare)">
+            <Input className="h-8 text-xs font-mono" placeholder="e.g. Sprint 13 Build" value={options.runBLabel} onChange={(e) => update("runBLabel", e.target.value)} />
+          </Field>
+        </div>
+      </Section>
+
+      <Separator />
+
       <Section title="Notes & Commentary">
         <Field label="Header Note">
           <Textarea className="text-xs min-h-[44px]" placeholder="Displayed below the header..." value={options.headerNote} onChange={(e) => update("headerNote", e.target.value)} />

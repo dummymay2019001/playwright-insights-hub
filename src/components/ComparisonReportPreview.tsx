@@ -60,8 +60,8 @@ export function ComparisonReportPreview({ data, options }: Props) {
 
       {/* Run Info Side by Side */}
       <div className="grid grid-cols-2 gap-3">
-        <RunCard label="Baseline (Run A)" manifest={d.runA.manifest} />
-        <RunCard label="Compare (Run B)" manifest={d.runB.manifest} />
+        <RunCard label={options.runALabel || "Baseline (Run A)"} manifest={d.runA.manifest} />
+        <RunCard label={options.runBLabel || "Compare (Run B)"} manifest={d.runB.manifest} />
       </div>
 
       {/* Delta Summary */}
