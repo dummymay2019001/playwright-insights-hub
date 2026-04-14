@@ -15,18 +15,19 @@ const features = [
   { icon: Target, title: "Severity & Priority", desc: "5-level severity (Blocker → Trivial) auto-inferred from tags and error types.", color: "bg-primary/10 text-primary" },
   { icon: ListChecks, title: "Test Steps Breakdown", desc: "See exactly where a test failed with step-by-step execution traces.", color: "bg-success/10 text-success" },
   { icon: Globe, title: "Environment Comparison", desc: "Compare results across staging, production, and more. Spot env-specific failures.", color: "bg-warning/10 text-warning" },
-  { icon: FileText, title: "Run, Suite & Test Reports", desc: "Three distinct PDF exports — Run snapshots, Suite stability trends, and Test health history.", color: "bg-primary/10 text-primary" },
+  { icon: FileText, title: "Run, Suite, Test & Comparison Reports", desc: "Four distinct PDF exports — Run snapshots, Suite stability, Test health, and Run-vs-Run comparison.", color: "bg-primary/10 text-primary" },
   { icon: Tag, title: "Tag-Based Filtering", desc: "Slice your suite by @smoke, @critical, @regression — see pass rates per tag instantly.", color: "bg-destructive/10 text-destructive" },
   { icon: Link2, title: "ADO & Jira Integration", desc: "Push results to Azure DevOps Test Plans or auto-create Jira bugs for failures.", color: "bg-accent text-accent-foreground" },
   { icon: Code2, title: "Code Playground", desc: "Interactive config generator — pick test type, browsers, tags, and get ready-to-use code.", color: "bg-success/10 text-success" },
 ];
 
 const whatsNew = [
-  { tag: "NEW", title: "Test Explorer", desc: "Browse all tests across runs with unique aggregation, sorting by pass rate, duration, or run count." },
-  { tag: "NEW", title: "Test-Level PDF Export", desc: "Export comprehensive reports for individual tests — health summary, failure analysis, duration trends." },
+  { tag: "NEW", title: "Run Comparison", desc: "Select any two past runs and compare them side by side — new failures, resolved tests, suite health deltas, and exportable PDF reports with custom run labels." },
+  { tag: "NEW", title: "Test Explorer", desc: "Browse all unique tests across runs with aggregated pass rates, duration, flaky detection, sorting, and filtering by suite or tags." },
+  { tag: "NEW", title: "Test-Level PDF Export", desc: "Export comprehensive reports for individual tests — health summary, failure analysis, duration trends, and status timeline." },
   { tag: "NEW", title: "Categorized Help Center", desc: "7-category guide system with search, difficulty badges, and an interactive Playground." },
   { tag: "IMPROVED", title: "Persistent Navigation", desc: "Top navigation stays visible on all pages — no more clicking back repeatedly from detail views." },
-  { tag: "IMPROVED", title: "Suite Health Map", desc: "Visual grid of suite health with per-suite pass rates, test counts, and top tags at a glance." },
+  { tag: "IMPROVED", title: "Enriched Test Data", desc: "Browser info, Playwright annotations, CI metadata (commit SHA, pipeline ID), and real-world error patterns." },
 ];
 
 const steps = [
@@ -39,7 +40,7 @@ const principles = [
   { icon: Shield, title: "Privacy First", text: "Your test data never leaves your machine. Period." },
   { icon: Clock, title: "Instant Setup", text: "Drag-and-drop your results — analyzing tests in under 60 seconds." },
   { icon: Layers, title: "Zero Backend", text: "No database. No server. Runs entirely from local JSON files." },
-  { icon: Download, title: "Export Ready", text: "Three levels of PDF reports — Run, Suite, and Test — tailored for any audience." },
+  { icon: Download, title: "Export Ready", text: "Four levels of PDF reports — Run, Suite, Test, and Comparison — tailored for any audience." },
 ];
 
 const AboutPage = () => {
@@ -58,7 +59,7 @@ const AboutPage = () => {
           <div className="max-w-3xl mx-auto text-center space-y-5">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
               <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-              <span className="font-mono text-[11px] text-primary font-medium tracking-wide">Local-First · Zero Config · 12+ Capabilities</span>
+              <span className="font-mono text-[11px] text-primary font-medium tracking-wide">Local-First · Zero Config · 15+ Capabilities</span>
             </div>
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold text-foreground tracking-tight leading-[1.08]">
               Turn test results into
@@ -89,8 +90,8 @@ const AboutPage = () => {
             {[
               { val: "0", unit: "backends", label: "required" },
               { val: "<60s", unit: "", label: "to first insight" },
-              { val: "12+", unit: "", label: "capabilities" },
-              { val: "3", unit: "report types", label: "Run · Suite · Test" },
+              { val: "15+", unit: "", label: "capabilities" },
+              { val: "4", unit: "report types", label: "Run · Suite · Test · Compare" },
             ].map((s) => (
               <div key={s.label} className="text-center">
                 <div className="font-mono text-xl sm:text-2xl font-bold text-foreground">
@@ -171,10 +172,12 @@ const AboutPage = () => {
                 <tbody className="text-xs sm:text-sm">
                   {[
                     { cap: "Cross-run trend analysis", trad: false, us: true },
+                    { cap: "Run-to-run comparison with custom labels", trad: false, us: true },
                     { cap: "Flaky test detection", trad: false, us: true },
                     { cap: "Defect classification (Product / Test / Infra)", trad: false, us: true },
                     { cap: "Auto severity inference", trad: false, us: true },
                     { cap: "Suite stability tracking", trad: false, us: true },
+                    { cap: "Unique test aggregation (Test Explorer)", trad: false, us: true },
                     { cap: "Test-level health history & export", trad: false, us: true },
                     { cap: "Tag-based pass rate breakdown", trad: false, us: true },
                     { cap: "Environment comparison", trad: false, us: true },

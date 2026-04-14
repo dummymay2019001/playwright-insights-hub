@@ -95,8 +95,8 @@ export function generateComparisonPdf(runA: TestRun, runB: TestRun, data: Compar
   doc.setTextColor(...DARK);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text("Baseline (Run A)", margin, y);
-  doc.text("Compare (Run B)", pw / 2 + 4, y);
+  doc.text(o.runALabel || "Baseline (Run A)", margin, y);
+  doc.text(o.runBLabel || "Compare (Run B)", pw / 2 + 4, y);
   y += 5;
 
   doc.setFontSize(8);
