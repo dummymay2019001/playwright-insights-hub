@@ -40,7 +40,7 @@ const principles = [
   { icon: Shield, title: "Privacy First", text: "Your test data never leaves your machine. Period." },
   { icon: Clock, title: "Instant Setup", text: "Drag-and-drop your results — analyzing tests in under 60 seconds." },
   { icon: Layers, title: "Zero Backend", text: "No database. No server. Runs entirely from local JSON files." },
-  { icon: Download, title: "Export Ready", text: "Three levels of PDF reports — Run, Suite, and Test — tailored for any audience." },
+  { icon: Download, title: "Export Ready", text: "Four levels of PDF reports — Run, Suite, Test, and Comparison — tailored for any audience." },
 ];
 
 const AboutPage = () => {
@@ -172,10 +172,12 @@ const AboutPage = () => {
                 <tbody className="text-xs sm:text-sm">
                   {[
                     { cap: "Cross-run trend analysis", trad: false, us: true },
+                    { cap: "Run-to-run comparison with custom labels", trad: false, us: true },
                     { cap: "Flaky test detection", trad: false, us: true },
                     { cap: "Defect classification (Product / Test / Infra)", trad: false, us: true },
                     { cap: "Auto severity inference", trad: false, us: true },
                     { cap: "Suite stability tracking", trad: false, us: true },
+                    { cap: "Unique test aggregation (Test Explorer)", trad: false, us: true },
                     { cap: "Test-level health history & export", trad: false, us: true },
                     { cap: "Tag-based pass rate breakdown", trad: false, us: true },
                     { cap: "Environment comparison", trad: false, us: true },
