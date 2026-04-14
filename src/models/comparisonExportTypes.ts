@@ -41,6 +41,8 @@ export const defaultComparisonExportOptions: ComparisonExportOptions = {
   headerNote: "",
   footerNote: "",
   executiveSummary: "",
+  runALabel: "",
+  runBLabel: "",
   includeDeltaSummary: true,
   includeNewFailures: true,
   includeResolved: true,
