@@ -369,9 +369,36 @@ test.describe('auth', () => {
     id: "analysis",
     icon: "🔬",
     title: "Analysis & Debugging",
-    description: "Defect categories, failure analysis, environments, logs, and retries",
+    description: "Test explorer, defect categories, failure analysis, environments, logs, and retries",
     color: "text-destructive",
     guides: [
+      {
+        id: "test-explorer",
+        icon: "🔍",
+        title: "Test Explorer",
+        summary: "Browse all unique tests across runs with aggregated stats, sorting, and filtering",
+        difficulty: "Beginner",
+        content: (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              The <strong className="text-foreground">Tests</strong> page lists every unique test across all imported runs with aggregated statistics.
+            </p>
+            <div className="rounded-lg border overflow-hidden">
+              <div className="px-4 py-2 bg-muted border-b text-xs font-mono text-muted-foreground">Per-Test Aggregation</div>
+              <div className="p-3 space-y-1.5 text-xs text-muted-foreground">
+                <p>📊 <strong className="text-foreground">Pass Rate</strong> — percentage across all runs</p>
+                <p>⏱️ <strong className="text-foreground">Avg Duration</strong> — mean execution time</p>
+                <p>🔄 <strong className="text-foreground">Run Count</strong> — how many runs include this test</p>
+                <p>⚡ <strong className="text-foreground">Flaky Badge</strong> — shown if test has both passed and failed</p>
+                <p>🏷️ <strong className="text-foreground">Latest Status</strong> — from the most recent run</p>
+              </div>
+            </div>
+            <Tip icon="📋">
+              <strong className="text-foreground">Sorting:</strong> Sort by name, pass rate, duration, or run count. Filter by status, suite, or tags. Click any test to view its full history and export a PDF report.
+            </Tip>
+          </div>
+        ),
+      },
       {
         id: "defect-categories",
         icon: "🐛",
