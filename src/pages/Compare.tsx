@@ -388,6 +388,118 @@ function ComparisonView({ data }: { data: ComparisonData }) {
         </AccordionItem>
       </Accordion>
 
+      {/* Duration Regressions */}
+      {d.durationRegressions.length > 0 && (
+        <Accordion type="multiple" className="space-y-2">
+          <AccordionItem value="duration-regressions" className="rounded-lg border border-amber-500/20 bg-card overflow-hidden">
+            <AccordionTrigger className="px-4 py-3 hover:no-underline">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-foreground">⏱️ Duration Regressions</span>
+                <span className="font-mono text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{d.durationRegressions.length}</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-3">
+              <p className="text-[10px] text-muted-foreground mb-2">Tests with ≥50% duration increase between the two runs</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs font-mono">
+                  <thead>
+                    <tr className="border-b text-muted-foreground">
+                      <th className="text-left py-2 pr-4">Test</th>
+                      <th className="text-left py-2 pr-2">Suite</th>
+                      <th className="text-right px-2 py-2">Run A</th>
+                      <th className="text-right px-2 py-2">Run B</th>
+                      <th className="text-right px-2 py-2">Δ%</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {d.durationRegressions.map((r) => (
+                      <tr key={r.name} className="border-b border-border/50">
+                        <td className="py-2 pr-4 text-foreground truncate max-w-[200px]">{r.name}</td>
+                        <td className="py-2 pr-2 text-muted-foreground truncate max-w-[100px]">{r.suite}</td>
+                        <td className="text-right px-2 py-2">{(r.durationA / 1000).toFixed(1)}s</td>
+                        <td className="text-right px-2 py-2">{(r.durationB / 1000).toFixed(1)}s</td>
+                        <td className="text-right px-2 py-2 text-destructive font-semibold">+{r.deltaPercent}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      )}
+
+      {/* Failure Category Shift */}
+      {d.failureCategoryShift.length > 0 && (
+        <Accordion type="multiple" defaultValue={["failure-shift"]} className="space-y-2">
+          <AccordionItem value="failure-shift" className="rounded-lg border bg-card overflow-hidden">
+            <AccordionTrigger className="px-4 py-3 hover:no-underline">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-foreground">🔀 Failure Category Shift</span>
+                <span className="font-mono text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{d.failureCategoryShift.length} categories</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-3">
+              <p className="text-[10px] text-muted-foreground mb-2">How failure types changed between runs</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs font-mono">
+                  <thead>
+                    <tr className="border-b text-muted-foreground">
+                      <th className="text-left py-2 pr-4">Category</th>
+                      <th className="text-center px-3 py-2">Run A</th>
+                      <th className="text-center px-3 py-2">Run B</th>
+                      <th className="text-center px-3 py-2">Δ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {d.failureCategoryShift.map((s) => (
+                      <tr key={s.category} className="border-b border-border/50">
+                        <td className="py-2 pr-4 text-foreground">{s.category}</td>
+                        <td className="text-center px-3 py-2">{s.countA}</td>
+                        <td className="text-center px-3 py-2">{s.countB}</td>
+                        <td className={`text-center px-3 py-2 font-semibold ${s.delta > 0 ? "text-destructive" : s.delta < 0 ? "text-success" : "text-muted-foreground"}`}>
+                          {s.delta > 0 ? `+${s.delta}` : s.delta}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      )}
+
+      {/* Flaky Between Runs */}
+      {d.flakyBetweenRuns.length > 0 && (
+        <Accordion type="multiple" className="space-y-2">
+          <AccordionItem value="flaky-between" className="rounded-lg border border-amber-500/20 bg-card overflow-hidden">
+            <AccordionTrigger className="px-4 py-3 hover:no-underline">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-foreground">🔄 Flaky Between Runs</span>
+                <span className="font-mono text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{d.flakyBetweenRuns.length}</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-3">
+              <p className="text-[10px] text-muted-foreground mb-2">Tests that flipped between pass ↔ fail across these two runs</p>
+              <div className="space-y-1">
+                {d.flakyBetweenRuns.map((t) => (
+                  <div key={t.name} className="flex items-center gap-2 px-3 py-1.5 rounded border bg-muted/20">
+                    <div className="flex items-center gap-1 shrink-0">
+                      <StatusBadge status={t.statusA} />
+                      <span className="text-muted-foreground text-[10px]">→</span>
+                      <StatusBadge status={t.statusB} />
+                    </div>
+                    <span className="font-mono text-xs text-foreground truncate flex-1">{t.name}</span>
+                    <span className="font-mono text-[10px] text-muted-foreground shrink-0">{t.suite}</span>
+                  </div>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      )}
+
       {/* No Changes */}
       {sections.length === 0 && (
         <div className="rounded-lg border bg-card p-8 text-center">

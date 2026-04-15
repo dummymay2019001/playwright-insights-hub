@@ -109,6 +109,9 @@ export function ComparisonExportSettingsPanel({ options, onChange }: Props) {
             ["includeNewTests", "New Tests"],
             ["includeRemovedTests", "Removed Tests"],
             ["includeSuiteHealth", "Suite Health Comparison"],
+            ["includeDurationRegressions", "Duration Regressions"],
+            ["includeFailureCategoryShift", "Failure Category Shift"],
+            ["includeFlakyBetweenRuns", "Flaky Between Runs"],
             ["includeErrorDetails", "Error Details"],
           ] as [keyof ComparisonExportOptions, string][]).map(([key, label]) => (
             <div key={key} className="flex items-center justify-between rounded border px-2.5 py-1.5">
