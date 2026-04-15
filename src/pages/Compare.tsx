@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useRuns } from "@/store/RunsContext";
 import { useNavigate } from "react-router-dom";
-import { TestRun, TestResult, TestStatus } from "@/models/types";
+import { TestRun, TestResult, TestStatus, DefectCategory } from "@/models/types";
 import { formatDate, formatDuration, passRate } from "@/utils/format";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,29 @@ import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
 import { FileDown } from "lucide-react";
+
+export interface DurationRegression {
+  name: string;
+  suite: string;
+  durationA: number;
+  durationB: number;
+  deltaMs: number;
+  deltaPercent: number;
+}
+
+export interface FailureCategoryShift {
+  category: string;
+  countA: number;
+  countB: number;
+  delta: number;
+}
+
+export interface FlakyBetweenRuns {
+  name: string;
+  suite: string;
+  statusA: TestStatus;
+  statusB: TestStatus;
+}
 
 export interface ComparisonData {
   runA: TestRun;
@@ -27,6 +50,21 @@ export interface ComparisonData {
   durationDelta: number;
   totalDelta: number;
   suiteHealthMap: Map<string, { passA: number; failA: number; passB: number; failB: number }>;
+  durationRegressions: DurationRegression[];
+  failureCategoryShift: FailureCategoryShift[];
+  flakyBetweenRuns: FlakyBetweenRuns[];
+}
+
+function categorizeError(error?: string): string {
+  if (!error) return "Unknown";
+  const e = error.toLowerCase();
+  if (e.includes("timeout") || e.includes("timed out")) return "Timeout";
+  if (e.includes("selector") || e.includes("locator") || e.includes("not found") || e.includes("no element")) return "Element Not Found";
+  if (e.includes("assert") || e.includes("expect") || e.includes("toequal") || e.includes("tobe")) return "Assertion Failure";
+  if (e.includes("network") || e.includes("fetch") || e.includes("econnrefused") || e.includes("cors")) return "Network/API Error";
+  if (e.includes("auth") || e.includes("401") || e.includes("403")) return "Auth/Permission";
+  if (e.includes("navigation") || e.includes("page") || e.includes("url")) return "Navigation Error";
+  return "Other";
 }
 
 export function buildComparison(runA: TestRun, runB: TestRun): ComparisonData {
@@ -56,6 +94,7 @@ export function buildComparison(runA: TestRun, runB: TestRun): ComparisonData {
     if (!mapB.has(name)) removed.push(name);
   }
 
+  // Suite health
   const suiteHealthMap = new Map<string, { passA: number; failA: number; passB: number; failB: number }>();
   const allSuites = new Set([
     ...runA.results.map((t) => t.suite),
@@ -72,6 +111,51 @@ export function buildComparison(runA: TestRun, runB: TestRun): ComparisonData {
     });
   }
 
+  // Duration regressions (>50% increase, both runs have the test)
+  const durationRegressions: DurationRegression[] = [];
+  for (const [name, testB] of mapB) {
+    const testA = mapA.get(name);
+    if (!testA || testA.duration === 0) continue;
+    const deltaMs = testB.duration - testA.duration;
+    const deltaPercent = Math.round((deltaMs / testA.duration) * 100);
+    if (deltaPercent >= 50 && deltaMs > 500) {
+      durationRegressions.push({ name, suite: testB.suite, durationA: testA.duration, durationB: testB.duration, deltaMs, deltaPercent });
+    }
+  }
+  durationRegressions.sort((a, b) => b.deltaPercent - a.deltaPercent);
+
+  // Failure category shift
+  const catA = new Map<string, number>();
+  const catB = new Map<string, number>();
+  for (const t of runA.results.filter((t) => t.status === "failed")) {
+    const cat = categorizeError(t.error);
+    catA.set(cat, (catA.get(cat) || 0) + 1);
+  }
+  for (const t of runB.results.filter((t) => t.status === "failed")) {
+    const cat = categorizeError(t.error);
+    catB.set(cat, (catB.get(cat) || 0) + 1);
+  }
+  const allCats = new Set([...catA.keys(), ...catB.keys()]);
+  const failureCategoryShift: FailureCategoryShift[] = [...allCats].map((cat) => ({
+    category: cat,
+    countA: catA.get(cat) || 0,
+    countB: catB.get(cat) || 0,
+    delta: (catB.get(cat) || 0) - (catA.get(cat) || 0),
+  })).filter((s) => s.countA > 0 || s.countB > 0).sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+
+  // Flaky between runs (tests that flipped pass↔fail in either direction, present in both)
+  const flakyBetweenRuns: FlakyBetweenRuns[] = [];
+  for (const [name, testB] of mapB) {
+    const testA = mapA.get(name);
+    if (!testA) continue;
+    if (
+      (testA.status === "passed" && testB.status === "failed") ||
+      (testA.status === "failed" && testB.status === "passed")
+    ) {
+      flakyBetweenRuns.push({ name, suite: testB.suite, statusA: testA.status, statusB: testB.status });
+    }
+  }
+
   const prA = passRate(runA.manifest);
   const prB = passRate(runB.manifest);
 
@@ -84,6 +168,9 @@ export function buildComparison(runA: TestRun, runB: TestRun): ComparisonData {
     durationDelta: runB.manifest.duration - runA.manifest.duration,
     totalDelta: runB.manifest.total - runA.manifest.total,
     suiteHealthMap,
+    durationRegressions,
+    failureCategoryShift,
+    flakyBetweenRuns,
   };
 }
 
