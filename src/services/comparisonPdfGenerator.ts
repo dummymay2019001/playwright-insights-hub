@@ -32,6 +32,9 @@ interface ComparisonData {
   durationDelta: number;
   totalDelta: number;
   suiteHealthMap: Map<string, { passA: number; failA: number; passB: number; failB: number }>;
+  durationRegressions: DurationRegression[];
+  failureCategoryShift: FailureCategoryShift[];
+  flakyBetweenRuns: FlakyBetweenRuns[];
 }
 
 export function generateComparisonPdf(runA: TestRun, runB: TestRun, data: ComparisonData, opts?: ComparisonExportOptions): void {
