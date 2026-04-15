@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import { TestRun } from "@/models/types";
 import { passRate, formatDuration, formatDate } from "@/utils/format";
 import { ComparisonExportOptions, defaultComparisonExportOptions } from "@/models/comparisonExportTypes";
+import { DurationRegression, FailureCategoryShift, FlakyBetweenRuns } from "@/pages/Compare";
 
 type RGB = [number, number, number];
 
