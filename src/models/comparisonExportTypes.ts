@@ -24,6 +24,9 @@ export interface ComparisonExportOptions {
   includeRemovedTests: boolean;
   includeSuiteHealth: boolean;
   includeErrorDetails: boolean;
+  includeDurationRegressions: boolean;
+  includeFailureCategoryShift: boolean;
+  includeFlakyBetweenRuns: boolean;
 
   colorMode: "color" | "grayscale";
   pageSize: "a4" | "letter";
@@ -51,6 +54,9 @@ export const defaultComparisonExportOptions: ComparisonExportOptions = {
   includeRemovedTests: true,
   includeSuiteHealth: true,
   includeErrorDetails: true,
+  includeDurationRegressions: true,
+  includeFailureCategoryShift: true,
+  includeFlakyBetweenRuns: true,
   colorMode: "color",
   pageSize: "a4",
 };

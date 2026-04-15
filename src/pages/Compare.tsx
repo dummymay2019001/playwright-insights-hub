@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useRuns } from "@/store/RunsContext";
 import { useNavigate } from "react-router-dom";
-import { TestRun, TestResult, TestStatus } from "@/models/types";
+import { TestRun, TestResult, TestStatus, DefectCategory } from "@/models/types";
 import { formatDate, formatDuration, passRate } from "@/utils/format";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,29 @@ import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
 import { FileDown } from "lucide-react";
+
+export interface DurationRegression {
+  name: string;
+  suite: string;
+  durationA: number;
+  durationB: number;
+  deltaMs: number;
+  deltaPercent: number;
+}
+
+export interface FailureCategoryShift {
+  category: string;
+  countA: number;
+  countB: number;
+  delta: number;
+}
+
+export interface FlakyBetweenRuns {
+  name: string;
+  suite: string;
+  statusA: TestStatus;
+  statusB: TestStatus;
+}
 
 export interface ComparisonData {
   runA: TestRun;
@@ -27,6 +50,21 @@ export interface ComparisonData {
   durationDelta: number;
   totalDelta: number;
   suiteHealthMap: Map<string, { passA: number; failA: number; passB: number; failB: number }>;
+  durationRegressions: DurationRegression[];
+  failureCategoryShift: FailureCategoryShift[];
+  flakyBetweenRuns: FlakyBetweenRuns[];
+}
+
+function categorizeError(error?: string): string {
+  if (!error) return "Unknown";
+  const e = error.toLowerCase();
+  if (e.includes("timeout") || e.includes("timed out")) return "Timeout";
+  if (e.includes("selector") || e.includes("locator") || e.includes("not found") || e.includes("no element")) return "Element Not Found";
+  if (e.includes("assert") || e.includes("expect") || e.includes("toequal") || e.includes("tobe")) return "Assertion Failure";
+  if (e.includes("network") || e.includes("fetch") || e.includes("econnrefused") || e.includes("cors")) return "Network/API Error";
+  if (e.includes("auth") || e.includes("401") || e.includes("403")) return "Auth/Permission";
+  if (e.includes("navigation") || e.includes("page") || e.includes("url")) return "Navigation Error";
+  return "Other";
 }
 
 export function buildComparison(runA: TestRun, runB: TestRun): ComparisonData {
@@ -56,6 +94,7 @@ export function buildComparison(runA: TestRun, runB: TestRun): ComparisonData {
     if (!mapB.has(name)) removed.push(name);
   }
 
+  // Suite health
   const suiteHealthMap = new Map<string, { passA: number; failA: number; passB: number; failB: number }>();
   const allSuites = new Set([
     ...runA.results.map((t) => t.suite),
@@ -72,6 +111,51 @@ export function buildComparison(runA: TestRun, runB: TestRun): ComparisonData {
     });
   }
 
+  // Duration regressions (>50% increase, both runs have the test)
+  const durationRegressions: DurationRegression[] = [];
+  for (const [name, testB] of mapB) {
+    const testA = mapA.get(name);
+    if (!testA || testA.duration === 0) continue;
+    const deltaMs = testB.duration - testA.duration;
+    const deltaPercent = Math.round((deltaMs / testA.duration) * 100);
+    if (deltaPercent >= 50 && deltaMs > 500) {
+      durationRegressions.push({ name, suite: testB.suite, durationA: testA.duration, durationB: testB.duration, deltaMs, deltaPercent });
+    }
+  }
+  durationRegressions.sort((a, b) => b.deltaPercent - a.deltaPercent);
+
+  // Failure category shift
+  const catA = new Map<string, number>();
+  const catB = new Map<string, number>();
+  for (const t of runA.results.filter((t) => t.status === "failed")) {
+    const cat = categorizeError(t.error);
+    catA.set(cat, (catA.get(cat) || 0) + 1);
+  }
+  for (const t of runB.results.filter((t) => t.status === "failed")) {
+    const cat = categorizeError(t.error);
+    catB.set(cat, (catB.get(cat) || 0) + 1);
+  }
+  const allCats = new Set([...catA.keys(), ...catB.keys()]);
+  const failureCategoryShift: FailureCategoryShift[] = [...allCats].map((cat) => ({
+    category: cat,
+    countA: catA.get(cat) || 0,
+    countB: catB.get(cat) || 0,
+    delta: (catB.get(cat) || 0) - (catA.get(cat) || 0),
+  })).filter((s) => s.countA > 0 || s.countB > 0).sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+
+  // Flaky between runs (tests that flipped pass↔fail in either direction, present in both)
+  const flakyBetweenRuns: FlakyBetweenRuns[] = [];
+  for (const [name, testB] of mapB) {
+    const testA = mapA.get(name);
+    if (!testA) continue;
+    if (
+      (testA.status === "passed" && testB.status === "failed") ||
+      (testA.status === "failed" && testB.status === "passed")
+    ) {
+      flakyBetweenRuns.push({ name, suite: testB.suite, statusA: testA.status, statusB: testB.status });
+    }
+  }
+
   const prA = passRate(runA.manifest);
   const prB = passRate(runB.manifest);
 
@@ -84,6 +168,9 @@ export function buildComparison(runA: TestRun, runB: TestRun): ComparisonData {
     durationDelta: runB.manifest.duration - runA.manifest.duration,
     totalDelta: runB.manifest.total - runA.manifest.total,
     suiteHealthMap,
+    durationRegressions,
+    failureCategoryShift,
+    flakyBetweenRuns,
   };
 }
 
@@ -300,6 +387,118 @@ function ComparisonView({ data }: { data: ComparisonData }) {
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+
+      {/* Duration Regressions */}
+      {d.durationRegressions.length > 0 && (
+        <Accordion type="multiple" className="space-y-2">
+          <AccordionItem value="duration-regressions" className="rounded-lg border border-amber-500/20 bg-card overflow-hidden">
+            <AccordionTrigger className="px-4 py-3 hover:no-underline">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-foreground">⏱️ Duration Regressions</span>
+                <span className="font-mono text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{d.durationRegressions.length}</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-3">
+              <p className="text-[10px] text-muted-foreground mb-2">Tests with ≥50% duration increase between the two runs</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs font-mono">
+                  <thead>
+                    <tr className="border-b text-muted-foreground">
+                      <th className="text-left py-2 pr-4">Test</th>
+                      <th className="text-left py-2 pr-2">Suite</th>
+                      <th className="text-right px-2 py-2">Run A</th>
+                      <th className="text-right px-2 py-2">Run B</th>
+                      <th className="text-right px-2 py-2">Δ%</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {d.durationRegressions.map((r) => (
+                      <tr key={r.name} className="border-b border-border/50">
+                        <td className="py-2 pr-4 text-foreground truncate max-w-[200px]">{r.name}</td>
+                        <td className="py-2 pr-2 text-muted-foreground truncate max-w-[100px]">{r.suite}</td>
+                        <td className="text-right px-2 py-2">{(r.durationA / 1000).toFixed(1)}s</td>
+                        <td className="text-right px-2 py-2">{(r.durationB / 1000).toFixed(1)}s</td>
+                        <td className="text-right px-2 py-2 text-destructive font-semibold">+{r.deltaPercent}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      )}
+
+      {/* Failure Category Shift */}
+      {d.failureCategoryShift.length > 0 && (
+        <Accordion type="multiple" defaultValue={["failure-shift"]} className="space-y-2">
+          <AccordionItem value="failure-shift" className="rounded-lg border bg-card overflow-hidden">
+            <AccordionTrigger className="px-4 py-3 hover:no-underline">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-foreground">🔀 Failure Category Shift</span>
+                <span className="font-mono text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{d.failureCategoryShift.length} categories</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-3">
+              <p className="text-[10px] text-muted-foreground mb-2">How failure types changed between runs</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs font-mono">
+                  <thead>
+                    <tr className="border-b text-muted-foreground">
+                      <th className="text-left py-2 pr-4">Category</th>
+                      <th className="text-center px-3 py-2">Run A</th>
+                      <th className="text-center px-3 py-2">Run B</th>
+                      <th className="text-center px-3 py-2">Δ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {d.failureCategoryShift.map((s) => (
+                      <tr key={s.category} className="border-b border-border/50">
+                        <td className="py-2 pr-4 text-foreground">{s.category}</td>
+                        <td className="text-center px-3 py-2">{s.countA}</td>
+                        <td className="text-center px-3 py-2">{s.countB}</td>
+                        <td className={`text-center px-3 py-2 font-semibold ${s.delta > 0 ? "text-destructive" : s.delta < 0 ? "text-success" : "text-muted-foreground"}`}>
+                          {s.delta > 0 ? `+${s.delta}` : s.delta}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      )}
+
+      {/* Flaky Between Runs */}
+      {d.flakyBetweenRuns.length > 0 && (
+        <Accordion type="multiple" className="space-y-2">
+          <AccordionItem value="flaky-between" className="rounded-lg border border-amber-500/20 bg-card overflow-hidden">
+            <AccordionTrigger className="px-4 py-3 hover:no-underline">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-foreground">🔄 Flaky Between Runs</span>
+                <span className="font-mono text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{d.flakyBetweenRuns.length}</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-3">
+              <p className="text-[10px] text-muted-foreground mb-2">Tests that flipped between pass ↔ fail across these two runs</p>
+              <div className="space-y-1">
+                {d.flakyBetweenRuns.map((t) => (
+                  <div key={t.name} className="flex items-center gap-2 px-3 py-1.5 rounded border bg-muted/20">
+                    <div className="flex items-center gap-1 shrink-0">
+                      <StatusBadge status={t.statusA} />
+                      <span className="text-muted-foreground text-[10px]">→</span>
+                      <StatusBadge status={t.statusB} />
+                    </div>
+                    <span className="font-mono text-xs text-foreground truncate flex-1">{t.name}</span>
+                    <span className="font-mono text-[10px] text-muted-foreground shrink-0">{t.suite}</span>
+                  </div>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      )}
 
       {/* No Changes */}
       {sections.length === 0 && (

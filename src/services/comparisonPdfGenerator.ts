@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import { TestRun } from "@/models/types";
 import { passRate, formatDuration, formatDate } from "@/utils/format";
 import { ComparisonExportOptions, defaultComparisonExportOptions } from "@/models/comparisonExportTypes";
+import { DurationRegression, FailureCategoryShift, FlakyBetweenRuns } from "@/pages/Compare";
 
 type RGB = [number, number, number];
 
@@ -31,6 +32,9 @@ interface ComparisonData {
   durationDelta: number;
   totalDelta: number;
   suiteHealthMap: Map<string, { passA: number; failA: number; passB: number; failB: number }>;
+  durationRegressions: DurationRegression[];
+  failureCategoryShift: FailureCategoryShift[];
+  flakyBetweenRuns: FlakyBetweenRuns[];
 }
 
 export function generateComparisonPdf(runA: TestRun, runB: TestRun, data: ComparisonData, opts?: ComparisonExportOptions): void {
@@ -230,7 +234,43 @@ export function generateComparisonPdf(runA: TestRun, runB: TestRun, data: Compar
     });
   }
 
-  // Footer on all pages
+  // Duration Regressions
+  if (o.includeDurationRegressions && data.durationRegressions.length > 0) {
+    if (y > 230) { doc.addPage(); y = 14; }
+    y = (doc as any).lastAutoTable?.finalY ? (doc as any).lastAutoTable.finalY + 8 : y;
+    sectionTable(
+      `Duration Regressions (${data.durationRegressions.length})`, AMBER,
+      data.durationRegressions.map((r) => [
+        r.name, r.suite,
+        `${(r.durationA / 1000).toFixed(1)}s`,
+        `${(r.durationB / 1000).toFixed(1)}s`,
+        `+${r.deltaPercent}%`,
+      ]),
+      ["Test", "Suite", "Run A", "Run B", "Δ%"],
+    );
+  }
+
+  // Failure Category Shift
+  if (o.includeFailureCategoryShift && data.failureCategoryShift.length > 0) {
+    sectionTable(
+      `Failure Category Shift (${data.failureCategoryShift.length})`, DARK,
+      data.failureCategoryShift.map((s) => [
+        s.category, `${s.countA}`, `${s.countB}`,
+        s.delta > 0 ? `+${s.delta}` : `${s.delta}`,
+      ]),
+      ["Category", "Run A", "Run B", "Δ"],
+    );
+  }
+
+  // Flaky Between Runs
+  if (o.includeFlakyBetweenRuns && data.flakyBetweenRuns.length > 0) {
+    sectionTable(
+      `Flaky Between Runs (${data.flakyBetweenRuns.length})`, AMBER,
+      data.flakyBetweenRuns.map((t) => [t.name, t.suite, t.statusA, t.statusB]),
+      ["Test", "Suite", "Status (A)", "Status (B)"],
+    );
+  }
+
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);

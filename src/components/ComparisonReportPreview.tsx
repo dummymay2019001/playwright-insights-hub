@@ -172,6 +172,75 @@ export function ComparisonReportPreview({ data, options }: Props) {
         </PreviewSection>
       )}
 
+      {/* Duration Regressions */}
+      {options.includeDurationRegressions && d.durationRegressions.length > 0 && (
+        <PreviewSection title={`⏱️ Duration Regressions (${d.durationRegressions.length})`}>
+          <table className="w-full text-[10px] font-mono">
+            <thead>
+              <tr className="border-b text-muted-foreground">
+                <th className="text-left py-1">Test</th>
+                <th className="text-right px-2">A</th>
+                <th className="text-right px-2">B</th>
+                <th className="text-right px-2">Δ%</th>
+              </tr>
+            </thead>
+            <tbody>
+              {d.durationRegressions.map((r) => (
+                <tr key={r.name} className="border-b border-border/30">
+                  <td className="py-1 truncate max-w-[180px]">{r.name}</td>
+                  <td className="text-right px-2">{(r.durationA / 1000).toFixed(1)}s</td>
+                  <td className="text-right px-2">{(r.durationB / 1000).toFixed(1)}s</td>
+                  <td className="text-right px-2 text-destructive font-semibold">+{r.deltaPercent}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </PreviewSection>
+      )}
+
+      {/* Failure Category Shift */}
+      {options.includeFailureCategoryShift && d.failureCategoryShift.length > 0 && (
+        <PreviewSection title={`🔀 Failure Category Shift (${d.failureCategoryShift.length})`}>
+          <table className="w-full text-[10px] font-mono">
+            <thead>
+              <tr className="border-b text-muted-foreground">
+                <th className="text-left py-1">Category</th>
+                <th className="text-center px-2">A</th>
+                <th className="text-center px-2">B</th>
+                <th className="text-center px-2">Δ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {d.failureCategoryShift.map((s) => (
+                <tr key={s.category} className="border-b border-border/30">
+                  <td className="py-1">{s.category}</td>
+                  <td className="text-center px-2">{s.countA}</td>
+                  <td className="text-center px-2">{s.countB}</td>
+                  <td className={`text-center px-2 font-semibold ${s.delta > 0 ? sc("failed") : s.delta < 0 ? sc("passed") : "text-muted-foreground"}`}>
+                    {s.delta > 0 ? `+${s.delta}` : s.delta}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </PreviewSection>
+      )}
+
+      {/* Flaky Between Runs */}
+      {options.includeFlakyBetweenRuns && d.flakyBetweenRuns.length > 0 && (
+        <PreviewSection title={`🔄 Flaky Between Runs (${d.flakyBetweenRuns.length})`}>
+          {d.flakyBetweenRuns.map((t) => (
+            <div key={t.name} className="flex items-center gap-2 px-2 py-1 rounded border bg-amber-500/5">
+              <StatusBadge status={t.statusA} />
+              <span className="text-[9px] text-muted-foreground">→</span>
+              <StatusBadge status={t.statusB} />
+              <span className="font-mono text-[10px] truncate flex-1">{t.name}</span>
+              <span className="text-[9px] text-muted-foreground">{t.suite}</span>
+            </div>
+          ))}
+        </PreviewSection>
+      )}
+
       {/* Footer */}
       <div className="border-t pt-2 flex justify-between text-[9px] text-muted-foreground">
         <span>Playwright Intelligence · Comparison Report</span>
